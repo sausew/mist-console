@@ -330,6 +330,55 @@ def usage():
         return jsonify({"available": False})
 
 
+SCHED_DIR = os.path.expanduser("~/.claude/scheduled-tasks")
+
+
+def _parse_routine(path):
+    """Read a routine SKILL.md: pull name/description from YAML frontmatter and
+    return the prompt body. Schedule (cron) isn't stored locally for desktop-app
+    routines, so we surface only what the file actually contains."""
+    try:
+        with open(path) as f:
+            text = f.read()
+    except Exception:
+        return None
+    name, desc, body = None, None, text
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            fm = text[3:end]
+            body = text[end + 4:].lstrip("\n")
+            for line in fm.splitlines():
+                if line.startswith("name:"):
+                    name = line[5:].strip()
+                elif line.startswith("description:"):
+                    desc = line[12:].strip()
+    return {"name": name, "description": desc, "prompt": body.strip()}
+
+
+@app.route("/routines")
+def routines():
+    """List the Claude Code routines (scheduled-agent definitions) so the Console
+    mirrors what the desktop app shows. Read-only — scheduling/running is still
+    owned by the desktop app / launchd."""
+    out = []
+    try:
+        for d in sorted(os.listdir(SCHED_DIR)):
+            sk = os.path.join(SCHED_DIR, d, "SKILL.md")
+            if not os.path.isfile(sk):
+                continue
+            r = _parse_routine(sk)
+            if not r:
+                continue
+            r.setdefault("name", d)
+            r["name"] = r.get("name") or d
+            r["dir"] = d
+            out.append(r)
+    except Exception:
+        pass
+    return jsonify({"routines": out})
+
+
 def _sse(obj):
     return "data: " + json.dumps(obj) + "\n\n"
 

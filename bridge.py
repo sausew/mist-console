@@ -121,14 +121,12 @@ class ClaudeSession:
             cmd.append("--dangerously-skip-permissions")
         elif self.permission_mode:
             cmd += ["--permission-mode", self.permission_mode]
-        # Load the local stdio MCP servers that authenticate from cached/local
-        # data (things3/fitbit/withings). Servers needing an interactive context
-        # — linkedin (uvx @latest network resolution) and the claude.ai OAuth
-        # connectors (Gmail/Calendar/Drive/MyChart, keychain) — HANG forever in
-        # this headless launchd-spawned process and block init, so they're out.
-        # MCP parity with the interactive CLI: load every scope (user + project +
-        # local) — things3/fitbit/withings/linkedin AND the claude.ai connectors.
-        # No --strict-mcp-config, so claude uses its normal full resolution.
+        # Full MCP parity with the interactive CLI: load every scope (user +
+        # project + local) — the local stdio servers (things3/fitbit/withings),
+        # linkedin (uvx @latest), and the claude.ai OAuth connectors
+        # (Gmail/Calendar/Drive/MyChart). No --strict-mcp-config, so claude uses
+        # its normal full resolution. The @latest/uvx servers resolve over the
+        # network, so they connect a beat slower than the local ones.
         if self.claude_session_id and not self._resume_tried:
             cmd += ["--resume", self.claude_session_id]  # restore model context
         if self.model:

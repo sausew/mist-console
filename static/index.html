@@ -24,6 +24,7 @@
   </div>
   <div class="actions">
     <button id="modelBtn" title="Switch model">model</button>
+    <button id="routinesBtn" title="Routines · scheduled agents from Claude Code">routines</button>
     <button id="settingsBtn" title="Settings · active MCP servers + tools">settings</button>
   </div>
 </header>
@@ -42,6 +43,12 @@
   <div id="railResize" title="Drag to resize · double-click to reset"></div>
   <main id="logs"></main>
 </div>
+
+<aside id="routinesPanel" hidden>
+  <div class="capHead">routines <span class="count" id="nRoutines"></span><button id="routinesClose">×</button></div>
+  <div class="capBody" id="routinesBody"></div>
+  <div class="routines-note">Imported from Claude Code's scheduled agents (<code>~/.claude/scheduled-tasks</code>). Read-only — the desktop app and launchd still run them on schedule.</div>
+</aside>
 
 <aside id="capPanel" hidden>
   <div class="capHead">settings <button id="capClose">×</button></div>
