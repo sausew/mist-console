@@ -710,10 +710,29 @@ def _periodic_save():
         _save_meta()
 
 
+# Free idle chats' claude processes (each ~235 MB + its own MCP servers). They're
+# resumable, so the next message respawns with --resume and full context. This
+# keeps RAM proportional to *active* chats, not every chat ever opened.
+IDLE_REAP_SECONDS = 600   # 10 minutes
+
+
+def _reaper():
+    while True:
+        time.sleep(60)
+        now = time.time()
+        for s in list(_sessions.values()):
+            try:
+                if s.alive and not s.busy and now - s.last_activity > IDLE_REAP_SECONDS:
+                    s.go_dormant()
+            except Exception:
+                pass
+
+
 _load_meta()
 _import_existing()
 quickaccess.load()
 threading.Thread(target=_periodic_save, daemon=True).start()
+threading.Thread(target=_reaper, daemon=True).start()
 
 
 if __name__ == "__main__":

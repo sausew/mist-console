@@ -362,10 +362,24 @@ def _quick_position():
         return 400, 700
 
 
+def _wait_for_port(port, timeout=6.0):
+    """Block only until Flask is actually accepting connections, instead of a
+    fixed sleep — the window then appears the instant the server is ready."""
+    import socket
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), 0.2):
+                return True
+        except OSError:
+            time.sleep(0.02)
+    return False
+
+
 def main():
     global _main_window
     threading.Thread(target=_run_flask, daemon=True).start()
-    time.sleep(1.0)  # let Flask bind before the webview loads
+    _wait_for_port(PORT)  # ready in ~0.2s instead of a hardcoded 1.0s sleep
     # quiet quick-access launch: start with the console window hidden (only the
     # overlay shows); it reveals itself when the user hits Enter (QuickApi.surface).
     quiet = False
