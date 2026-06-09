@@ -47,7 +47,10 @@
 <aside id="routinesPanel" hidden>
   <div class="capHead">routines <span class="count" id="nRoutines"></span><button id="routinesClose">×</button></div>
   <div class="capBody" id="routinesBody"></div>
-  <div class="routines-note">Imported from Claude Code's scheduled agents (<code>~/.claude/scheduled-tasks</code>). Read-only — the desktop app and launchd still run them on schedule.</div>
+  <div class="routines-foot">
+    <button id="routineNew" class="rt-new">+ new routine</button>
+    <div class="routines-note">Edits write <code>~/.claude/scheduled-tasks</code> (shared with the Claude desktop app). Enabling a schedule runs the routine from the Console via launchd. If the same routine is also scheduled in the desktop app, it will run twice — disable it there.</div>
+  </div>
 </aside>
 
 <aside id="capPanel" hidden>

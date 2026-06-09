@@ -185,6 +185,19 @@ def set_model(sid):
     return jsonify({"ok": True, "model": model})
 
 
+@app.route("/sessions/<sid>/title", methods=["POST"])
+def rename_session(sid):
+    s = _sessions.get(sid)
+    if not s:
+        return jsonify({"ok": False}), 404
+    title = (request.get_json(silent=True) or {}).get("title", "").strip()
+    if not title:
+        return jsonify({"ok": False, "error": "empty"}), 400
+    s.title = title[:80]
+    _save_meta()
+    return jsonify({"ok": True, "title": s.title})
+
+
 @app.route("/sessions/<sid>/pin", methods=["POST"])
 def pin_session(sid):
     s = _sessions.get(sid)
@@ -330,13 +343,23 @@ def usage():
         return jsonify({"available": False})
 
 
+import itertools
+import plistlib
+import re
+import shutil
+
 SCHED_DIR = os.path.expanduser("~/.claude/scheduled-tasks")
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROUTINES_META = os.path.join(HERE, "routines-meta")   # Console-owned schedule state
+LAUNCH_AGENTS = os.path.expanduser("~/Library/LaunchAgents")
+RUNNER = os.path.join(HERE, "run-routine.sh")
+ROUTINE_LOG = os.path.join(HERE, "routine-runs.log")
+LABEL_PREFIX = "com.mist.routine."
 
 
 def _parse_routine(path):
     """Read a routine SKILL.md: pull name/description from YAML frontmatter and
-    return the prompt body. Schedule (cron) isn't stored locally for desktop-app
-    routines, so we surface only what the file actually contains."""
+    return the prompt body."""
     try:
         with open(path) as f:
             text = f.read()
@@ -350,17 +373,153 @@ def _parse_routine(path):
             body = text[end + 4:].lstrip("\n")
             for line in fm.splitlines():
                 if line.startswith("name:"):
-                    name = line[5:].strip()
+                    name = _yaml_val(line[5:])
                 elif line.startswith("description:"):
-                    desc = line[12:].strip()
+                    desc = _yaml_val(line[12:])
     return {"name": name, "description": desc, "prompt": body.strip()}
+
+
+def _yaml_val(raw):
+    """Read a scalar frontmatter value: JSON-decode if it's a quoted string
+    (how we write them, colon-safe), else return the trimmed raw text."""
+    raw = raw.strip()
+    if raw[:1] == '"':
+        try:
+            return json.loads(raw)
+        except Exception:
+            return raw.strip('"')
+    return raw
+
+
+def _slug(s):
+    s = re.sub(r"[^a-z0-9]+", "-", (s or "").lower()).strip("-")
+    return s or "routine"
+
+
+def _rt_meta_path(d):
+    return os.path.join(ROUTINES_META, d + ".json")
+
+
+def _rt_load_meta(d):
+    try:
+        with open(_rt_meta_path(d)) as f:
+            return json.load(f)
+    except Exception:
+        return {"cron": "", "enabled": False}
+
+
+def _rt_save_meta(d, cron, enabled):
+    os.makedirs(ROUTINES_META, exist_ok=True)
+    with open(_rt_meta_path(d), "w") as f:
+        json.dump({"cron": cron or "", "enabled": bool(enabled)}, f, indent=2)
+
+
+def _cron_field(expr, lo, hi):
+    """Expand one cron field (supports *, n, a-b, a,b, */step, a-b/step)."""
+    vals = set()
+    for part in expr.split(","):
+        step = 1
+        rng = part
+        if "/" in part:
+            rng, s = part.split("/", 1)
+            step = int(s)
+        if rng.strip() == "*":
+            a, b = lo, hi
+        elif "-" in rng:
+            a, b = rng.split("-", 1)
+            a, b = int(a), int(b)
+        else:
+            a = b = int(rng)
+        for v in range(a, b + 1, step):
+            if lo <= v <= hi:
+                vals.add(v)
+    return sorted(vals)
+
+
+def cron_to_calendar(cron):
+    """Translate a 5-field cron to launchd StartCalendarInterval dict(s).
+    Raises ValueError on a bad or too-granular expression."""
+    f = (cron or "").split()
+    if len(f) != 5:
+        raise ValueError("Schedule must be a 5-field cron: minute hour day month weekday")
+    specs = [("Minute", f[0], 0, 59), ("Hour", f[1], 0, 23),
+             ("Day", f[2], 1, 31), ("Month", f[3], 1, 12), ("Weekday", f[4], 0, 6)]
+    axes = []
+    for key, expr, lo, hi in specs:
+        if expr.strip() == "*":
+            axes.append([(key, None)])
+        else:
+            try:
+                axes.append([(key, v) for v in _cron_field(expr, lo, hi)])
+            except ValueError:
+                raise ValueError("Could not parse cron field %r" % expr)
+    out = []
+    for combo in itertools.product(*axes):
+        d = {k: v for (k, v) in combo if v is not None}
+        if d:
+            out.append(d)
+    if not out:
+        raise ValueError("Schedule is too frequent to represent (pin a minute or hour)")
+    if len(out) > 200:
+        raise ValueError("Schedule expands to %d run times — make it less granular" % len(out))
+    return out
+
+
+def _label(d):
+    return LABEL_PREFIX + d
+
+
+def _plist_path(d):
+    return os.path.join(LAUNCH_AGENTS, _label(d) + ".plist")
+
+
+def _launchctl(args):
+    try:
+        return subprocess.run(["launchctl"] + args, capture_output=True, text=True, timeout=15)
+    except Exception:
+        return None
+
+
+def _apply_schedule(d, cron, enabled):
+    """Generate/refresh or remove the launchd job for routine d. Returns (ok, err)."""
+    label = _label(d)
+    plist = _plist_path(d)
+    domain = "gui/%d" % os.getuid()
+    # Always boot out the old job first so edits take effect.
+    _launchctl(["bootout", "%s/%s" % (domain, label)])
+    if not enabled:
+        try:
+            if os.path.exists(plist):
+                os.remove(plist)
+        except Exception:
+            pass
+        return True, None
+    try:
+        intervals = cron_to_calendar(cron)
+    except ValueError as e:
+        return False, str(e)
+    spec = {
+        "Label": label,
+        "ProgramArguments": ["/bin/bash", RUNNER, d],
+        "StartCalendarInterval": intervals if len(intervals) > 1 else intervals[0],
+        "StandardOutPath": ROUTINE_LOG,
+        "StandardErrorPath": ROUTINE_LOG,
+        "RunAtLoad": False,
+    }
+    os.makedirs(LAUNCH_AGENTS, exist_ok=True)
+    with open(plist, "wb") as f:
+        plistlib.dump(spec, f)
+    r = _launchctl(["bootstrap", domain, plist])
+    if r is not None and r.returncode != 0:
+        # bootstrap can fail if a stale job lingers; surface but keep the plist.
+        return True, (r.stderr or "").strip() or None
+    return True, None
 
 
 @app.route("/routines")
 def routines():
-    """List the Claude Code routines (scheduled-agent definitions) so the Console
-    mirrors what the desktop app shows. Read-only — scheduling/running is still
-    owned by the desktop app / launchd."""
+    """List routines (from ~/.claude/scheduled-tasks) with their Console-owned
+    schedule + enabled state."""
     out = []
     try:
         for d in sorted(os.listdir(SCHED_DIR)):
@@ -370,13 +529,83 @@ def routines():
             r = _parse_routine(sk)
             if not r:
                 continue
-            r.setdefault("name", d)
             r["name"] = r.get("name") or d
             r["dir"] = d
+            meta = _rt_load_meta(d)
+            r["cron"] = meta.get("cron", "")
+            r["enabled"] = bool(meta.get("enabled"))
+            r["scheduled"] = os.path.exists(_plist_path(d))
             out.append(r)
     except Exception:
         pass
     return jsonify({"routines": out})
+
+
+@app.route("/routines/save", methods=["POST"])
+def routines_save():
+    """Create or update a routine: write SKILL.md (name/description/prompt) and
+    apply its schedule via launchd."""
+    b = request.get_json(silent=True) or {}
+    name = (b.get("name") or "").strip()
+    desc = (b.get("description") or "").strip()
+    prompt = (b.get("prompt") or "").strip()
+    cron = (b.get("cron") or "").strip()
+    enabled = bool(b.get("enabled"))
+    d = (b.get("dir") or "").strip() or _slug(name)
+    if not re.fullmatch(r"[a-z0-9-]+", d or ""):
+        return jsonify({"ok": False, "error": "invalid routine id"}), 400
+    if not name:
+        return jsonify({"ok": False, "error": "name is required"}), 400
+    if enabled:  # validate cron before writing anything
+        try:
+            cron_to_calendar(cron)
+        except ValueError as e:
+            return jsonify({"ok": False, "error": str(e)}), 400
+    rdir = os.path.join(SCHED_DIR, d)
+    os.makedirs(rdir, exist_ok=True)
+    fm = "---\nname: %s\ndescription: %s\n---\n\n%s\n" % (
+        json.dumps(name), json.dumps(desc), prompt)
+    with open(os.path.join(rdir, "SKILL.md"), "w") as f:
+        f.write(fm)
+    _rt_save_meta(d, cron, enabled)
+    ok, err = _apply_schedule(d, cron, enabled)
+    return jsonify({"ok": ok, "dir": d, "error": err})
+
+
+@app.route("/routines/run", methods=["POST"])
+def routines_run():
+    """Fire a routine now (detached)."""
+    d = ((request.get_json(silent=True) or {}).get("dir") or "").strip()
+    if not re.fullmatch(r"[a-z0-9-]+", d or ""):
+        return jsonify({"ok": False, "error": "invalid routine id"}), 400
+    if not os.path.isfile(os.path.join(SCHED_DIR, d, "SKILL.md")):
+        return jsonify({"ok": False, "error": "routine not found"}), 404
+    try:
+        with open(ROUTINE_LOG, "a") as logf:
+            subprocess.Popen(["/bin/bash", RUNNER, d], stdout=logf, stderr=logf,
+                             start_new_session=True)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+    return jsonify({"ok": True})
+
+
+@app.route("/routines/delete", methods=["POST"])
+def routines_delete():
+    """Remove a routine entirely: launchd job, schedule meta, and SKILL.md dir."""
+    d = ((request.get_json(silent=True) or {}).get("dir") or "").strip()
+    if not re.fullmatch(r"[a-z0-9-]+", d or ""):
+        return jsonify({"ok": False, "error": "invalid routine id"}), 400
+    _apply_schedule(d, "", False)   # bootout + remove plist
+    try:
+        if os.path.exists(_rt_meta_path(d)):
+            os.remove(_rt_meta_path(d))
+    except Exception:
+        pass
+    try:
+        shutil.rmtree(os.path.join(SCHED_DIR, d))
+    except Exception:
+        pass
+    return jsonify({"ok": True})
 
 
 def _sse(obj):
