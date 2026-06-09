@@ -314,6 +314,12 @@ def stream(sid):
                              "Connection": "keep-alive"})
 
 
+# Spoken greeting on launch. Off by default: afplay/mist-say spawn extra work at
+# startup, and the mist-say fallback cold-starts the heavy XTTS voice service
+# (~28s + lots of RAM). The text greeting still shows instantly. Flip to re-enable.
+STARTUP_VOICE = False
+
+
 @app.route("/greeting")
 def greeting():
     global _greeted
@@ -322,16 +328,17 @@ def greeting():
     if _greeted:
         return jsonify({"text": None})
     _greeted = True
-    wav = os.path.join(GREETINGS_DIR, f"greet_{i}.wav")
-    try:
-        if os.path.exists(wav):
-            subprocess.Popen(["/usr/bin/afplay", wav],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        elif os.path.exists(MIST_SAY):
-            subprocess.Popen([MIST_SAY, text],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except Exception:
-        pass
+    if STARTUP_VOICE:
+        wav = os.path.join(GREETINGS_DIR, f"greet_{i}.wav")
+        try:
+            if os.path.exists(wav):
+                subprocess.Popen(["/usr/bin/afplay", wav],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            elif os.path.exists(MIST_SAY):
+                subprocess.Popen([MIST_SAY, text],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
     return jsonify({"text": text})
 
 
