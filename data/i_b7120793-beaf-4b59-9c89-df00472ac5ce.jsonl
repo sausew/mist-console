@@ -1,0 +1,11 @@
+{"type": "user_text", "text": "Introduce yourself in one sentence, then run the bash command: echo it-works"}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "I'm MIST, Alex's exobrain assistant, and I'm glad to be here with you."}]}
+{"type": "mist_msg", "blocks": [{"kind": "tool", "name": "Bash", "input": {"command": "echo it-works", "description": "Run echo test command"}, "result": "it-works"}]}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "There it is, `it-works`. Command ran clean. What are we getting into today?"}]}
+{"type": "user_text", "text": "In one short sentence, introduce yourself. Then run the bash command: echo MISTLIVE"}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "I'm MIST, Alex's exobrain assistant and accountability partner."}]}
+{"type": "mist_msg", "blocks": [{"kind": "tool", "name": "Bash", "input": {"command": "echo MISTLIVE", "description": "Echo MISTLIVE"}, "result": "MISTLIVE"}]}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "`MISTLIVE`, loud and clear. What's next?"}]}
+{"type": "user_text", "text": "Run the bash command: echo MISTLIVE-CARD  (nothing else, just run it)"}
+{"type": "mist_msg", "blocks": [{"kind": "tool", "name": "Bash", "input": {"command": "echo MISTLIVE-CARD", "description": "Echo MISTLIVE-CARD"}, "result": "MISTLIVE-CARD"}]}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "MISTLIVE-CARD"}]}

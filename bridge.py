@@ -15,7 +15,7 @@ import time
 
 HARNESS = "/Users/alexhedtke/Documents/Exobrain harness"
 CLAUDE = os.path.expanduser("~/.npm-global/bin/claude")
-PERSONA = os.path.join(HARNESS, "mist-terminal", "mist-persona.md")
+# Persona comes from the harness CLAUDE.md (auto-loaded via cwd=HARNESS), not a side file.
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -133,8 +133,9 @@ class ClaudeSession:
             cmd += ["--resume", self.claude_session_id]  # restore model context
         if self.model:
             cmd += ["--model", self.model]
-        if os.path.exists(PERSONA):
-            cmd += ["--append-system-prompt-file", PERSONA]
+        # MIST's persona is NOT injected from a side file. It lives in the
+        # Exobrain's CLAUDE.md ("Identity & Voice: MIST"), which `claude`
+        # auto-loads because we run in the harness cwd (see HARNESS / cwd below).
         return cmd
 
     def ensure_started(self):

@@ -1,10 +1,7 @@
-# Conversation history + session metadata (personal data — never commit)
-data/
-# Generated greeting audio (regenerate via the voice clone)
-greetings/
-# Logs
+# This is a PRIVATE repo, so personal data (conversation history in data/,
+# greeting audio) is committed, not excluded — no privacy carve-outs needed.
+# Only transient build/OS junk is ignored (regenerates; not content):
 *.log
 __pycache__/
-# macOS cruft
 .DS_Store
 **/.DS_Store

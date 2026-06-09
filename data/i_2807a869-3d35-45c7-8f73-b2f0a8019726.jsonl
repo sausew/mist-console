@@ -1,0 +1,6 @@
+{"type": "user_text", "text": "Reply with exactly: PERSIST-ME"}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "PERSIST-ME"}]}
+{"type": "user_text", "text": "What word did I just ask you to reply with? One word."}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "PERSIST-ME"}]}
+{"type": "user_text", "text": "Earlier in THIS conversation I asked you to reply with a specific word. What was it? Reply with only that word."}
+{"type": "mist_msg", "blocks": [{"kind": "text", "text": "PERSIST-ME"}]}
