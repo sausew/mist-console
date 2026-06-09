@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MIST</title>
+<style>
+  html, body {
+    margin: 0; height: 100%; background: transparent; overflow: hidden;
+    font-family: "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  /* box is bottom-anchored so the picker can open upward without shifting the input */
+  .wrap { height: 100%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 30px; box-sizing: border-box; }
+  .box {
+    position: relative;
+    width: 600px; box-sizing: border-box; padding: 14px 18px;
+    display: flex; flex-direction: column;
+    background: rgba(12, 24, 37, 0.94);
+    border: 1px solid rgba(43, 212, 212, 0.65);
+    border-radius: 16px;
+    box-shadow:
+      0 0 36px 6px rgba(43, 212, 212, 0.45),
+      0 0 90px 26px rgba(43, 212, 212, 0.22),
+      0 0 160px 60px rgba(43, 212, 212, 0.10),
+      inset 0 0 22px rgba(43, 212, 212, 0.08);
+    animation: breathe 3.4s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { box-shadow:
+      0 0 36px 6px rgba(43,212,212,0.45), 0 0 90px 26px rgba(43,212,212,0.22),
+      0 0 160px 60px rgba(43,212,212,0.10), inset 0 0 22px rgba(43,212,212,0.08); }
+    50% { box-shadow:
+      0 0 46px 9px rgba(43,212,212,0.55), 0 0 120px 34px rgba(43,212,212,0.28),
+      0 0 200px 80px rgba(43,212,212,0.13), inset 0 0 26px rgba(43,212,212,0.12); }
+  }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .glyph { height: 26px; width: auto; display: block; filter: drop-shadow(0 0 8px rgba(43,212,212,0.7)); }
+  input.q {
+    flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+    color: #e6f2fa; font-size: 18px; font-family: inherit; caret-color: #2bd4d4;
+  }
+  input.q::placeholder { color: #5f7d92; }
+  .ab {
+    background: transparent; border: 1px solid rgba(43,212,212,0.30); border-radius: 9px;
+    color: #cfe8ff; font-size: 15px; line-height: 1; padding: 6px 8px; cursor: pointer;
+  }
+  .ab:hover, .ab.on { border-color: #2bd4d4; background: rgba(43,212,212,0.14); }
+  .chips { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .chips:empty { display: none; }
+  .chip {
+    font-size: 12px; color: #cfe8ee; background: rgba(43,212,212,0.10);
+    border: 1px solid rgba(43,212,212,0.4); border-radius: 8px; padding: 3px 9px;
+    display: flex; align-items: center; gap: 7px; max-width: 320px;
+  }
+  .chip.target { background: rgba(155,140,255,0.12); border-color: rgba(155,140,255,0.55); color: #d7d0ff; }
+  .chip .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .x { cursor: pointer; color: #7fb0c4; }
+  .chip .x:hover { color: #ff6b6b; }
+
+  /* conversation picker — opens upward, above the box */
+  .picker {
+    position: absolute; left: 0; right: 0; bottom: calc(100% + 12px);
+    box-sizing: border-box; padding: 10px;
+    background: rgba(12, 24, 37, 0.97);
+    border: 1px solid rgba(43, 212, 212, 0.5); border-radius: 14px;
+    box-shadow: 0 0 30px 4px rgba(43,212,212,0.22), 0 0 70px 18px rgba(43,212,212,0.10);
+  }
+  .picker[hidden] { display: none; }
+  .picker .psearch {
+    width: 100%; box-sizing: border-box; padding: 8px 11px;
+    background: rgba(43,212,212,0.06); border: 1px solid rgba(43,212,212,0.30);
+    border-radius: 9px; color: #e6f2fa; font-size: 14px; font-family: inherit;
+    caret-color: #2bd4d4; outline: none;
+  }
+  .picker .psearch::placeholder { color: #5f7d92; }
+  .picker .phint { color: #5f7d92; font-size: 11px; padding: 8px 4px 2px; }
+  .picker .plist { margin-top: 6px; max-height: 270px; overflow-y: auto; }
+  .pi {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    color: #cfe8ee; font-size: 14px; white-space: nowrap;
+  }
+  .pi:hover, .pi.sel { background: rgba(43,212,212,0.16); color: #e6f2fa; }
+  .pi .glyph-i { flex: 0 0 auto; color: #2bd4d4; width: 14px; text-align: center; }
+  .pi .pt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .pi.new .glyph-i { color: #9b8cff; }
+  .picker .pempty { color: #5f7d92; font-size: 13px; padding: 10px; text-align: center; }
+  .picker .plist::-webkit-scrollbar { width: 8px; }
+  .picker .plist::-webkit-scrollbar-thumb { background: rgba(43,212,212,0.3); border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="box">
+    <div class="picker" id="picker" hidden>
+      <input id="psearch" class="psearch" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Find a conversation…  (↑↓ choose · ⏎ pick · Esc back)">
+      <div class="plist" id="plist"></div>
+    </div>
+    <div class="row">
+      <img class="glyph" src="mist-logo.png" alt="MIST">
+      <input id="q" class="q" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Ask MIST…  (Enter to send · Esc to dismiss)">
+      <button class="ab" id="pickBtn" title="Send into an existing conversation" onmousedown="event.preventDefault()">⤷</button>
+      <button class="ab" id="shotBtn" title="Attach a screenshot selection" onmousedown="event.preventDefault()">⛶</button>
+      <button class="ab" id="urlBtn" title="Attach the current page URL" onmousedown="event.preventDefault()">🔗</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+<script>
+  const input = document.getElementById("q");
+  const chipsEl = document.getElementById("chips");
+  const picker = document.getElementById("picker");
+  const pickSearch = document.getElementById("psearch");
+  const plist = document.getElementById("plist");
+  let attachedShot = null;   // local file path (set by native)
+  let attachedUrl = null;
+  let targetSid = null;      // null = start a new chat
+  let targetTitle = null;
+
+  let pickItems = [];        // currently shown {id,title,pinned,_new}
+  let pickIdx = 0;
+  let sessionsCache = [];
+
+  function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+  function host(u) { try { return new URL(u).host || u; } catch (_) { return u; } }
+
+  function renderChips() {
+    chipsEl.innerHTML = "";
+    document.getElementById("shotBtn").classList.toggle("on", !!attachedShot);
+    document.getElementById("urlBtn").classList.toggle("on", !!attachedUrl);
+    document.getElementById("pickBtn").classList.toggle("on", !!targetSid);
+    if (targetSid) {
+      const c = addChip("⤷ " + (targetTitle || "conversation"),
+        () => { targetSid = null; targetTitle = null; renderChips(); input.focus(); });
+      c.classList.add("target");
+    }
+    if (attachedShot) addChip("⛶ Screenshot", () => { attachedShot = null; renderChips(); input.focus(); });
+    if (attachedUrl) addChip("🔗 " + host(attachedUrl), () => { attachedUrl = null; renderChips(); input.focus(); });
+  }
+  function addChip(label, onRemove) {
+    const c = document.createElement("div"); c.className = "chip";
+    const t = document.createElement("span"); t.className = "t"; t.textContent = label; c.appendChild(t);
+    const x = document.createElement("span"); x.className = "x"; x.textContent = "×";
+    x.addEventListener("click", onRemove); c.appendChild(x);
+    chipsEl.appendChild(c);
+    return c;
+  }
+  function reset() {
+    input.value = ""; attachedShot = null; attachedUrl = null;
+    targetSid = null; targetTitle = null;
+    closePicker(); renderChips();
+  }
+
+  // called by the native panel after it captures
+  window.__attachShot = (path) => { attachedShot = path || null; renderChips(); input.focus(); };
+  window.__attachUrl = (url) => { attachedUrl = url || null; renderChips(); input.focus(); };
+  // called by the native panel when the overlay is (re)shown
+  window.__qfocus = () => { (picker.hidden ? input : pickSearch).focus(); };
+
+  // bridge to the native panel (WKWebView message handler), with a pywebview fallback
+  function signal(action) {
+    try {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.mist) {
+        window.webkit.messageHandlers.mist.postMessage(action);
+      } else if (window.pywebview && window.pywebview.api) {
+        if (action === "surface") window.pywebview.api.surface();
+        else if (action === "dismiss") window.pywebview.api.dismiss();
+        // expand/collapse/screenshot/url have no fallback outside the native panel
+      }
+    } catch (_) {}
+  }
+
+  /* ---------- conversation picker ---------- */
+  async function openPicker() {
+    if (!picker.hidden) return;
+    picker.hidden = false;
+    signal("expand");                 // grow the native panel upward
+    pickSearch.value = "";
+    try {
+      const list = await (await fetch("/sessions")).json();
+      sessionsCache = list.sort((a, b) =>
+        (a.pinned !== b.pinned) ? (a.pinned ? -1 : 1) : (b.last_activity - a.last_activity));
+    } catch (_) { sessionsCache = []; }
+    renderPickList("");
+    pickSearch.focus();
+  }
+  function closePicker() {
+    if (picker.hidden) return;
+    picker.hidden = true;
+    signal("collapse");               // shrink the panel back down
+  }
+  function renderPickList(q) {
+    q = (q || "").toLowerCase().trim();
+    const matches = sessionsCache.filter((s) => (s.title || "").toLowerCase().includes(q));
+    pickItems = [{ id: null, title: "New chat", _new: true }].concat(matches).slice(0, 9);
+    pickIdx = 0;
+    plist.innerHTML = "";
+    pickItems.forEach((s, i) => {
+      const row = document.createElement("div");
+      row.className = "pi" + (s._new ? " new" : "") + (i === pickIdx ? " sel" : "");
+      const g = document.createElement("span"); g.className = "glyph-i";
+      g.textContent = s._new ? "＋" : (s.pinned ? "◆" : "▸");
+      const t = document.createElement("span"); t.className = "pt"; t.textContent = s.title || "New chat";
+      row.appendChild(g); row.appendChild(t);
+      row.addEventListener("mousedown", (e) => { e.preventDefault(); choosePick(i); });
+      row.addEventListener("mouseenter", () => { pickIdx = i; paintPickSel(); });
+      plist.appendChild(row);
+    });
+    if (!matches.length && q) {
+      const e = document.createElement("div"); e.className = "pempty";
+      e.textContent = "No match · ⏎ starts a new chat"; plist.appendChild(e);
+    }
+  }
+  function paintPickSel() {
+    [...plist.querySelectorAll(".pi")].forEach((r, i) => r.classList.toggle("sel", i === pickIdx));
+  }
+  function choosePick(i) {
+    const s = pickItems[i];
+    if (!s) return;
+    targetSid = s._new ? null : s.id;
+    targetTitle = s._new ? null : s.title;
+    closePicker();
+    renderChips();
+    input.focus();
+  }
+
+  document.getElementById("pickBtn").addEventListener("click", () => {
+    if (picker.hidden) openPicker(); else closePicker();
+  });
+  pickSearch.addEventListener("input", () => renderPickList(pickSearch.value));
+  pickSearch.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); pickIdx = Math.min(pickIdx + 1, pickItems.length - 1); paintPickSel(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); pickIdx = Math.max(pickIdx - 1, 0); paintPickSel(); }
+    else if (e.key === "Enter") { e.preventDefault(); choosePick(pickIdx); }
+    else if (e.key === "Escape") { e.preventDefault(); closePicker(); input.focus(); }
+  });
+
+  /* ---------- main input ---------- */
+  // keep focus on the input whenever the panel regains focus (the screenshot flow
+  // hides+reshows the panel; never clear the typed text or chosen target)
+  const refocus = () => { if (picker.hidden) input.focus(); else pickSearch.focus(); };
+  window.addEventListener("focus", refocus);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refocus(); });
+  window.addEventListener("pageshow", refocus);
+  input.focus();
+
+  document.getElementById("shotBtn").addEventListener("click", () => signal("screenshot"));
+  document.getElementById("urlBtn").addEventListener("click", () => signal("url"));
+
+  input.addEventListener("keydown", async (e) => {
+    if (e.key === "ArrowDown" && picker.hidden && !input.value) {
+      // open the picker from the input with ↓ when nothing's typed
+      e.preventDefault(); openPicker(); return;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (!picker.hidden) { closePicker(); input.focus(); return; }
+      reset();
+      signal("dismiss");
+      return;
+    }
+    if (e.key === "Enter" && (input.value.trim() || attachedShot || attachedUrl || targetSid)) {
+      e.preventDefault();
+      const body = {
+        text: input.value.trim(), screenshot: attachedShot, url: attachedUrl,
+        session: targetSid,
+      };
+      reset();
+      try {
+        await fetch("/quick-new", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      } catch (_) {}
+      signal("surface");
+    }
+  });
+</script>
+</body>
+</html>

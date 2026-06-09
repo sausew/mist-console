@@ -1,0 +1,10 @@
+# Conversation history + session metadata (personal data — never commit)
+data/
+# Generated greeting audio (regenerate via the voice clone)
+greetings/
+# Logs
+*.log
+__pycache__/
+# macOS cruft
+.DS_Store
+**/.DS_Store
