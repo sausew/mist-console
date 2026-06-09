@@ -51,7 +51,7 @@ The Console spawns the official `claude` binary, which authenticates with the **
 
 ## Tabs (multi-session) + persistence
 
-The left rail is a stacked list of independent conversations, each backed by its own headless `claude` process. `+ new chat` spawns one; `×` closes it (deletes its data); the `◆/◇` toggle pins it; clicking switches.
+The left rail is a stacked list of independent conversations, each backed by its own headless `claude` process. `+ new chat` spawns one; `×` closes it (deletes its data); the `◆/◇` toggle pins it; clicking switches. Typing **`/new`** in the composer (and Enter) does the same as `+ new chat` from the keyboard; `/new <text>` opens a fresh chat and seeds it with that first message. It's a Console-local command, intercepted in `sendActive()` and never forwarded to Claude (distinct from the harness `slash_commands`, which do reach claude).
 
 - **Sorted newest-first**, pinned conversations on top (with a divider).
 - **Persistent.** Every event is recorded to `data/<id>.jsonl`; metadata (title, pinned, last_activity, claude session id) to `data/sessions.json`. On connect, `/stream/<id>` replays the full transcript, so reload / tab-switch / app-restart all show history.
