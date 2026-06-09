@@ -189,7 +189,13 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 .capHead { display: flex; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--teal); }
 .capHead button { margin-left: auto; border: 0; font-size: 16px; }
 .capBody { overflow-y: auto; padding: 10px 12px; }
-.capBody h4 { color: var(--dim); font-size: 11px; text-transform: uppercase; margin: 12px 0 6px; }
+.capBody h4 {
+  color: var(--dim); font-size: 11px; text-transform: uppercase; margin: 12px 0 6px;
+  cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;
+}
+.capBody h4::before { content: "\25be"; font-size: 9px; color: var(--teal); }   /* ▾ expanded */
+.capBody h4.collapsed::before { content: "\25b8"; }                              /* ▸ collapsed */
+.capBody h4.collapsed + * { display: none; }
 .capBody .count { color: var(--teal); font-weight: 400; }
 .qa { margin-bottom: 8px; }
 .qa-row { display: flex; align-items: center; gap: 10px; }
