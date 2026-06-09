@@ -127,13 +127,83 @@ def _load_spinner_verbs():
 
 SPINNER_VERBS = _load_spinner_verbs()
 
-MODELS = [
+# The picker auto-discovers models so new releases appear on their own. The model
+# ids live as plain strings inside the `claude` binary (which auto-updates), so we
+# grep it for the latest clean alias per family. Falls back to this curated list if
+# the binary can't be read.
+import re as _re
+
+CLAUDE_BIN_LINK = os.path.expanduser("~/.npm-global/bin/claude")
+_MODEL_FAMILIES = ["fable", "opus", "sonnet", "haiku"]   # also display order
+# 1-2 digit version groups only — rejects 8-digit date snapshots like
+# claude-opus-4-20250514 (which would otherwise read as version 4.20250514).
+_CLEAN_ALIAS = _re.compile(r"^claude-(fable|opus|sonnet|haiku)-(\d{1,2}(?:-\d{1,2})?)$")
+FALLBACK_MODELS = [
     {"id": "", "label": "Default"},
+    {"id": "claude-fable-5", "label": "Fable 5"},
     {"id": "claude-opus-4-8[1m]", "label": "Opus 4.8 (1M)"},
     {"id": "claude-opus-4-8", "label": "Opus 4.8"},
     {"id": "claude-sonnet-4-6", "label": "Sonnet 4.6"},
     {"id": "claude-haiku-4-5-20251001", "label": "Haiku 4.5"},
 ]
+
+
+def _version_tuple(v):
+    try:
+        return tuple(int(x) for x in v.split("-"))
+    except Exception:
+        return (0,)
+
+
+def _discover_models():
+    """Grep the claude binary for the latest clean alias per model family. Returns
+    None on any failure so the caller can fall back."""
+    binpath = os.path.realpath(CLAUDE_BIN_LINK)
+    try:
+        out = subprocess.run(
+            ["grep", "-aohE", r"claude-(fable|opus|sonnet|haiku)-[0-9][0-9-]*", binpath],
+            capture_output=True, text=True, timeout=25).stdout
+    except Exception:
+        return None
+    latest = {}   # family -> highest clean version string (e.g. "4-8", "5")
+    for tok in set(out.split()):
+        m = _CLEAN_ALIAS.match(tok)   # rejects dated / -v1 / -fast snapshots
+        if not m:
+            continue
+        fam, ver = m.group(1), m.group(2)
+        if _version_tuple(ver) > _version_tuple(latest.get(fam, "0")):
+            latest[fam] = ver
+    if not latest:
+        return None
+    models = [{"id": "", "label": "Default"}]
+    for fam in _MODEL_FAMILIES:
+        ver = latest.get(fam)
+        if not ver:
+            continue
+        full = f"claude-{fam}-{ver}"
+        label = f"{fam.capitalize()} {ver.replace('-', '.')}"
+        if fam == "opus":   # offer the 1M-context variant first
+            models.append({"id": full + "[1m]", "label": label + " (1M)"})
+        models.append({"id": full, "label": label})
+    return models
+
+
+_models_cache = {"key": None, "models": None}
+
+
+def get_models():
+    """Cached model list, refreshed when the claude binary changes (i.e. after a
+    CLI auto-update), so newly released models show up without a code change."""
+    try:
+        key = os.path.getmtime(os.path.realpath(CLAUDE_BIN_LINK))
+    except Exception:
+        key = None
+    if _models_cache["models"] is None or _models_cache["key"] != key:
+        _models_cache["models"] = _discover_models() or FALLBACK_MODELS
+        _models_cache["key"] = key
+    return _models_cache["models"]
+
+
 _default_model = ""
 
 
@@ -168,7 +238,7 @@ def close_session(sid):
 
 @app.route("/config")
 def config():
-    return jsonify({"spinner_verbs": SPINNER_VERBS, "models": MODELS,
+    return jsonify({"spinner_verbs": SPINNER_VERBS, "models": get_models(),
                     "default_model": _default_model})
 
 
