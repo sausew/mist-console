@@ -45,6 +45,7 @@ class ClaudeSession:
         self.session_id = None
         self.last_init = None
         self.context_pct = None
+        self._last_msg_usage = None  # usage of the latest assistant message (single-call snapshot)
 
         self.history = []
         self._jsonl = os.path.join(DATA_DIR, f"{id}.jsonl") if id else None
@@ -121,6 +122,11 @@ class ClaudeSession:
             cmd.append("--dangerously-skip-permissions")
         elif self.permission_mode:
             cmd += ["--permission-mode", self.permission_mode]
+        # AskUserQuestion is an interactive picker the CLI resolves itself; in this
+        # headless stream-json process there's no TTY, so it auto-dismisses with no
+        # answer. Disable it so the model asks in plain text, which the user can
+        # answer by typing a normal reply.
+        cmd += ["--disallowed-tools", "AskUserQuestion"]
         # Full MCP parity with the interactive CLI: load every scope (user +
         # project + local) — the local stdio servers (things3/fitbit/withings),
         # linkedin (uvx @latest), and the claude.ai OAuth connectors
@@ -197,6 +203,12 @@ class ClaudeSession:
                 self.session_id = obj.get("session_id")
                 self.claude_session_id = obj.get("session_id")
                 self.last_init = obj
+            elif obj.get("type") == "assistant":
+                # Each assistant message carries the usage of ONE API call — a true
+                # snapshot of current context occupancy. Keep the latest for ctx %.
+                mu = (obj.get("message") or {}).get("usage")
+                if mu:
+                    self._last_msg_usage = mu
             elif obj.get("type") == "result":
                 self.last_activity = time.time()
                 self._emit_context(obj)
@@ -209,7 +221,11 @@ class ClaudeSession:
 
     def _emit_context(self, result):
         try:
-            u = result.get("usage", {}) or {}
+            # Use the latest assistant message's usage (one API call = current context
+            # occupancy), NOT result.usage — the latter is the turn's CUMULATIVE total
+            # across every internal tool-call round trip, so on a multi-step turn it sums
+            # the context many times over and reads way past 100% (the old 357% bug).
+            u = self._last_msg_usage or result.get("usage", {}) or {}
             used = (u.get("input_tokens", 0)
                     + u.get("cache_read_input_tokens", 0)
                     + u.get("cache_creation_input_tokens", 0))
@@ -217,7 +233,7 @@ class ClaudeSession:
             for mu in (result.get("modelUsage") or {}).values():
                 window = max(window, mu.get("contextWindow", 0))
             if window:
-                self.context_pct = round(used / window * 100, 1)
+                self.context_pct = round(min(used / window, 1.0) * 100, 1)
                 self._broadcast({"type": "context", "pct": self.context_pct,
                                  "used": used, "window": window})
         except Exception:

@@ -119,6 +119,12 @@ body.col-resizing { cursor: col-resize; user-select: none; }
   border-left: 3px solid var(--user); padding: 9px 12px;
 }
 .msg.mist .body  { color: var(--text); }
+/* Chat text is selectable (WKWebView can default selection off) + visible highlight. */
+#logs, .msg .who, .msg .body, .msg .body * {
+  -webkit-user-select: text; user-select: text;
+}
+.msg .body { cursor: text; }
+::selection { background: rgba(43, 212, 212, .30); color: var(--text); }
 
 /* thinking */
 .think {

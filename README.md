@@ -62,7 +62,7 @@ Backend: `/sessions` GET/POST, `/sessions/<id>` DELETE, `/sessions/<id>/pin` POS
 
 ## Usage metrics (top bar)
 
-- **ctx %** — context window used for the *active* tab, computed live in `bridge.py` from each turn's usage (`input + cache_read + cache_creation`) ÷ the model's `contextWindow`, broadcast as a `context` event.
+- **ctx %** — context window used for the *active* tab, computed live in `bridge.py` from the latest assistant message's usage (`input + cache_read + cache_creation`) ÷ the model's `contextWindow`, broadcast as a `context` event. Uses the per-message usage (a single API call = current context occupancy), not the `result` event's turn-cumulative total, which sums every internal tool-call round trip and reads past 100%.
 - **5h %** and **7d %** (with reset countdown / days remaining) — account-level rate limits read from `~/.claude/usage-cache.json` via `/usage` (polled every 45s). That cache is written by the statusline (`statusline-command.sh` tees its payload), so it refreshes whenever any interactive session renders. Shows a "cache Nm old" hint if stale. No API cost.
 
 ## Composer & boot
