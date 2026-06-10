@@ -112,7 +112,15 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 #logs { flex: 1; min-width: 0; position: relative; }
 .session-log { position: absolute; inset: 0; overflow-y: auto; padding: 16px 18px 40px; }
 .session-log[hidden] { display: none; }
-.msg { margin: 0 0 18px; max-width: 900px; }
+.msg {
+  margin: 0 0 18px; max-width: 900px;
+  /* Skip layout/paint for off-screen messages so fullscreen/resize only reflows
+     the visible few instead of the whole (multi-thousand-node) transcript.
+     `auto` remembers each message's real height once rendered, so scrolling and
+     scroll-to-bottom stay accurate. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 140px;
+}
 .msg .who { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 .msg.user .who   { color: var(--user); font-weight: 700; }
 .msg.mist .who   { color: var(--teal); }
