@@ -36,6 +36,7 @@ def _save_meta():
             if not s:
                 continue
             data.append({"id": sid, "title": s.title, "pinned": s.pinned,
+                         "pin_order": s.pin_order,
                          "last_activity": s.last_activity, "model": s.model,
                          "claude_session_id": s.claude_session_id,
                          "import_path": s.import_path})
@@ -61,6 +62,7 @@ def _load_meta():
             continue
         _sessions[sid] = ClaudeSession(
             id=sid, title=m.get("title"), pinned=m.get("pinned", False),
+            pin_order=m.get("pin_order", 0),
             claude_session_id=m.get("claude_session_id"), model=m.get("model"),
             import_path=m.get("import_path"),
             last_activity=m.get("last_activity"), autostart=False)  # dormant
@@ -88,7 +90,8 @@ def _session_list():
         s = _sessions.get(sid)
         if s:
             out.append({"id": sid, "title": s.title or "New chat", "alive": s.alive,
-                        "pinned": s.pinned, "last_activity": s.last_activity,
+                        "pinned": s.pinned, "pin_order": s.pin_order,
+                        "last_activity": s.last_activity,
                         "model": s.model or ""})
     return out
 
@@ -274,8 +277,22 @@ def pin_session(sid):
     if not s:
         return jsonify({"ok": False}), 404
     s.pinned = not s.pinned
+    if s.pinned:   # newly pinned -> drop to the end of the pinned list
+        s.pin_order = max((x.pin_order for x in _sessions.values() if x.pinned), default=-1) + 1
     _save_meta()
     return jsonify({"ok": True, "pinned": s.pinned})
+
+
+@app.route("/sessions/pin-order", methods=["POST"])
+def set_pin_order():
+    """Persist a manual ordering of pinned chats (list of ids, top to bottom)."""
+    ids = (request.get_json(silent=True) or {}).get("ids", [])
+    for i, sid in enumerate(ids):
+        s = _sessions.get(sid)
+        if s:
+            s.pin_order = i
+    _save_meta()
+    return jsonify({"ok": True})
 
 
 @app.route("/send/<sid>", methods=["POST"])
@@ -717,29 +734,10 @@ def _periodic_save():
         _save_meta()
 
 
-# Free idle chats' claude processes (each ~235 MB + its own MCP servers). They're
-# resumable, so the next message respawns with --resume and full context. This
-# keeps RAM proportional to *active* chats, not every chat ever opened.
-IDLE_REAP_SECONDS = 600   # 10 minutes
-
-
-def _reaper():
-    while True:
-        time.sleep(60)
-        now = time.time()
-        for s in list(_sessions.values()):
-            try:
-                if s.alive and not s.busy and now - s.last_activity > IDLE_REAP_SECONDS:
-                    s.go_dormant()
-            except Exception:
-                pass
-
-
 _load_meta()
 _import_existing()
 quickaccess.load()
 threading.Thread(target=_periodic_save, daemon=True).start()
-threading.Thread(target=_reaper, daemon=True).start()
 
 
 if __name__ == "__main__":

@@ -28,10 +28,12 @@ class ClaudeSession:
 
     def __init__(self, id=None, title=None, pinned=False, claude_session_id=None,
                  last_activity=None, autostart=True, import_path=None,
-                 permission_mode=DEFAULT_PERMISSION_MODE, model=None, cwd=HARNESS):
+                 permission_mode=DEFAULT_PERMISSION_MODE, model=None, cwd=HARNESS,
+                 pin_order=0):
         self.id = id
         self.title = title
         self.pinned = pinned
+        self.pin_order = pin_order   # manual sort position among pinned chats
         self.import_path = import_path   # Claude Code jsonl to lazily import on open
         self._import_done = False
         self.last_activity = last_activity or time.time()
@@ -56,7 +58,6 @@ class ClaudeSession:
         self._started_at = 0.0
         self._saw_init = False
         self._intentional_stop = False
-        self.busy = False   # a turn is in flight — don't reap mid-response
 
         self._load_history()
         if autostart:
@@ -168,7 +169,6 @@ class ClaudeSession:
     def _watch(self):
         code = self.proc.wait()
         self.alive = False
-        self.busy = False
         if self._intentional_stop:           # close or model switch — not a crash
             self._intentional_stop = False
             return
@@ -213,7 +213,6 @@ class ClaudeSession:
                     self._last_msg_usage = mu
             elif obj.get("type") == "result":
                 self.last_activity = time.time()
-                self.busy = False   # turn finished — eligible for idle reaping
                 self._emit_context(obj)
             self._broadcast(obj)
 
@@ -289,7 +288,6 @@ class ClaudeSession:
             t = text or "Screenshot" if image_path else (text or url or "New chat")
             self.title = (t[:40] + "…") if len(t) > 40 else t
         self.last_activity = time.time()
-        self.busy = True   # turn in flight until the result event
         self._broadcast({"type": "user_text", "text": display})   # for live + replay
         msg = {"type": "user", "message": {"role": "user", "content": content}}
         try:
@@ -298,7 +296,6 @@ class ClaudeSession:
             return True
         except (BrokenPipeError, ValueError, OSError):
             self.alive = False
-            self.busy = False
             return False
 
     def stop(self):
@@ -311,17 +308,6 @@ class ClaudeSession:
         except Exception:
             pass
         self.alive = False
-        self.busy = False
-
-    def go_dormant(self):
-        """Free an idle session's claude process (and its MCP servers). Context is
-        restored via --resume on the next send, so this is invisible to the user
-        beyond a slightly slower first reply. No-op if busy or already stopped."""
-        if not self.alive or self.busy:
-            return False
-        self._resume_tried = False   # next ensure_started resumes prior context
-        self.stop()
-        return True
 
     def delete_data(self):
         try:

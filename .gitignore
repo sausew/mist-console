@@ -1,6 +1,9 @@
-# This is a PRIVATE repo, so personal data (conversation history in data/,
-# greeting audio) is committed, not excluded — no privacy carve-outs needed.
-# Only transient build/OS junk is ignored (regenerates; not content):
+# This is a PRIVATE repo. Conversation transcripts in data/ grow without bound
+# (a single session can exceed GitHub's 100MB per-file limit), so data/ is NOT
+# tracked — it's local runtime state, read by the app from disk. Greeting audio
+# stays committed.
+# Transient build/OS junk (regenerates; not content) is also ignored:
+data/
 *.log
 __pycache__/
 .DS_Store
