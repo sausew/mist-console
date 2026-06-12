@@ -208,8 +208,10 @@ class ClaudeSession:
             elif obj.get("type") == "assistant":
                 # Each assistant message carries the usage of ONE API call — a true
                 # snapshot of current context occupancy. Keep the latest for ctx %.
+                # Skip subagent (sidechain) messages: they carry the SUBAGENT's
+                # context, not this session's, and would skew ctx way low.
                 mu = (obj.get("message") or {}).get("usage")
-                if mu:
+                if mu and not obj.get("parent_tool_use_id"):
                     self._last_msg_usage = mu
             elif obj.get("type") == "result":
                 self.last_activity = time.time()
