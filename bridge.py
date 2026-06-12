@@ -22,6 +22,16 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DEFAULT_PERMISSION_MODE = "bypassPermissions"
 HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 
+# Scoped to Console sessions only (see _build_cmd). Keeps MIST from speaking
+# aloud in a text chat; voice stays enabled everywhere else.
+NO_VOICE_PROMPT = (
+    "You are running inside the MIST Console, a text-only chat surface. "
+    "Do NOT produce audio or speech here: never run mist-say, mist-notify, "
+    "any mist-voice script, afplay, the `say` command, or anything else that "
+    "plays sound or speaks aloud. Respond in text only. (Your voice tools "
+    "remain available on other surfaces; they are simply disabled in this one.)"
+)
+
 
 class ClaudeSession:
     """One conversation: a persisted event history + (lazily) a claude process."""
@@ -142,6 +152,15 @@ class ClaudeSession:
         # MIST's persona is NOT injected from a side file. It lives in the
         # Exobrain's CLAUDE.md ("Identity & Voice: MIST"), which `claude`
         # auto-loads because we run in the harness cwd (see HARNESS / cwd below).
+        #
+        # Voice is OFF in the Console. CLAUDE.md grants MIST audio tools
+        # (mist-say / mist-notify / mist-voice), and with bypassPermissions she
+        # can run them unprompted — so she'd occasionally speak aloud mid-chat.
+        # The Console is a text surface, so we scope a "no audio" instruction to
+        # THIS session only. Other surfaces (news-briefing podcast, note
+        # narration, the mist-terminal greeting) keep voice — we don't touch
+        # CLAUDE.md.
+        cmd += ["--append-system-prompt", NO_VOICE_PROMPT]
         return cmd
 
     def ensure_started(self):
