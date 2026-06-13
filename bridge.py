@@ -22,6 +22,43 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DEFAULT_PERMISSION_MODE = "bypassPermissions"
 HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 
+# Live rate-limit store, refreshed from each Console turn's rate_limit_event.
+# WHY: the usage badges' % comes from ~/.claude/usage-cache.json, which only the
+# interactive-CLI statusline refreshes. During Console-only use that cache goes
+# stale and, once its window's resets_at passes, the front-end drops it and the
+# 5h/7d badges go BLANK. The headless stream still emits rate_limit_event every
+# turn carrying the live resets_at + status (but not the %), so we persist that
+# here and /usage merges it — keeping a fresh reset countdown + blocked status
+# (and preserving the cached % while the window hasn't rolled) so the badge
+# stays populated whenever MIST has run at least one turn.
+RATE_LIVE_PATH = os.path.join(DATA_DIR, "rate-live.json")
+_rate_lock = threading.Lock()
+
+
+def record_rate_limit(info):
+    """Persist a live rate_limit_event's resets_at + status per window (atomic)."""
+    t = (info or {}).get("rateLimitType")
+    if t not in ("five_hour", "seven_day"):
+        return
+    rec = {"resets_at": info.get("resetsAt"), "status": info.get("status"),
+           "ts": int(time.time())}
+    if not rec["resets_at"]:
+        return
+    with _rate_lock:
+        try:
+            with open(RATE_LIVE_PATH) as f:
+                d = json.load(f) or {}
+        except Exception:
+            d = {}
+        d[t] = rec
+        tmp = RATE_LIVE_PATH + ".tmp.%d" % os.getpid()
+        try:
+            with open(tmp, "w") as f:
+                json.dump(d, f)
+            os.replace(tmp, RATE_LIVE_PATH)
+        except Exception:
+            pass
+
 # Scoped to Console sessions only (see _build_cmd). Keeps MIST from speaking
 # aloud in a text chat; voice stays enabled everywhere else.
 NO_VOICE_PROMPT = (
@@ -235,6 +272,10 @@ class ClaudeSession:
             elif obj.get("type") == "result":
                 self.last_activity = time.time()
                 self._emit_context(obj)
+            elif obj.get("type") == "rate_limit_event":
+                # Keep the usage badges' reset/status fresh during Console-only
+                # use (see RATE_LIVE_PATH note); the front-end reads it via /usage.
+                record_rate_limit(obj.get("rate_limit_info") or {})
             self._broadcast(obj)
 
     def _read_stderr(self):

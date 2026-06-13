@@ -15,7 +15,7 @@ import time
 from flask import Flask, Response, jsonify, request, send_from_directory
 
 import quickaccess
-from bridge import ClaudeSession, DATA_DIR, HARNESS
+from bridge import ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
@@ -418,23 +418,48 @@ def quick_access_set():
 
 @app.route("/usage")
 def usage():
+    # Two sources, merged: the % comes from the interactive-CLI statusline cache
+    # (USAGE_CACHE, often stale during Console-only use), while the live reset
+    # time + status come from each Console turn's rate_limit_event (RATE_LIVE_PATH).
+    # Merging keeps the 5h/7d badges fresh — and non-blank — even when the cache
+    # isn't moving. See bridge.record_rate_limit / RATE_LIVE_PATH.
+    cache, age = {}, None
     try:
         with open(USAGE_CACHE) as f:
-            d = json.load(f)
-        rl = d.get("rate_limits", {}) or {}
-        cw = d.get("context_window", {}) or {}
-
-        def lim(k):
-            x = rl.get(k) or {}
-            return {"used_percentage": x.get("used_percentage"),
-                    "resets_at": x.get("resets_at")}
-
-        return jsonify({"available": True, "five_hour": lim("five_hour"),
-                        "seven_day": lim("seven_day"),
-                        "context_window_pct": cw.get("used_percentage"),
-                        "age_seconds": int(time.time() - os.path.getmtime(USAGE_CACHE))})
+            cache = json.load(f) or {}
+        age = int(time.time() - os.path.getmtime(USAGE_CACHE))
     except Exception:
-        return jsonify({"available": False})
+        cache = {}
+    try:
+        with open(RATE_LIVE_PATH) as f:
+            live = json.load(f) or {}
+    except Exception:
+        live = {}
+
+    rl = cache.get("rate_limits", {}) or {}
+    cw = cache.get("context_window", {}) or {}
+
+    def lim(k):
+        x = rl.get(k) or {}
+        pct = x.get("used_percentage")
+        resets_at = x.get("resets_at")
+        status = None
+        lv = live.get(k) or {}
+        lr = lv.get("resets_at")
+        if lr:
+            # A live reset time LATER than the cached one means the window has
+            # rolled over, so the cached % belongs to an expired window — drop it
+            # (we don't have the new %; show the reset countdown instead of a lie).
+            if resets_at and lr > resets_at:
+                pct = None
+            resets_at = lr
+            status = lv.get("status")
+        return {"used_percentage": pct, "resets_at": resets_at, "status": status}
+
+    return jsonify({"available": bool(rl or live),
+                    "five_hour": lim("five_hour"), "seven_day": lim("seven_day"),
+                    "context_window_pct": cw.get("used_percentage"),
+                    "age_seconds": age})
 
 
 import itertools
