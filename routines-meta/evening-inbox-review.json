@@ -1,0 +1,4 @@
+{
+  "cron": "0 20 * * *",
+  "enabled": true
+}
