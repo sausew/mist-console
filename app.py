@@ -462,6 +462,120 @@ def usage():
                     "age_seconds": age})
 
 
+# ---- notes (app-wide persistent scratchpad) ---------------------------------
+# A single GLOBAL notes store (not per-chat), the source of truth on disk. Notes
+# persist across restarts, app close, force-quit, and app rebuilds — data/ is
+# gitignored runtime state that no deploy ever touches. A note is removed ONLY
+# when the user explicitly sends or deletes it; nothing else (closing a chat,
+# crashing, updating) can drop one. Writes are atomic (temp file + fsync +
+# os.replace), so an interrupted write leaves the previous good file intact and
+# never half-written.
+NOTES_PATH = os.path.join(DATA_DIR, "notes.json")
+_notes = []                       # list of {id, text, created, updated}
+_notes_counter = 0
+_notes_lock = threading.Lock()
+
+
+def _load_notes():
+    """Load the notes store at startup. Tolerates a missing/corrupt file by
+    starting empty rather than ever raising."""
+    global _notes, _notes_counter
+    try:
+        with open(NOTES_PATH) as f:
+            data = json.load(f)
+    except Exception:
+        return
+    items = data.get("notes") if isinstance(data, dict) else data
+    if not isinstance(items, list):
+        return
+    _notes = [n for n in items if isinstance(n, dict) and n.get("text")]
+    for n in _notes:
+        try:
+            _notes_counter = max(_notes_counter, int(str(n.get("id", "n0")).lstrip("n")))
+        except ValueError:
+            pass
+
+
+def _persist_notes():
+    """Atomically write the notes list to disk. Caller must hold _notes_lock."""
+    tmp = NOTES_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump({"notes": _notes}, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, NOTES_PATH)   # atomic on the same filesystem
+
+
+@app.route("/notes", methods=["GET"])
+def notes_get():
+    with _notes_lock:
+        return jsonify({"notes": list(_notes)})
+
+
+@app.route("/notes", methods=["POST"])
+def notes_create():
+    global _notes_counter
+    text = ((request.get_json(silent=True) or {}).get("text") or "").strip()
+    if not text:
+        return jsonify({"ok": False, "error": "empty"}), 400
+    with _notes_lock:
+        _notes_counter += 1
+        now = time.time()
+        note = {"id": f"n{_notes_counter}", "text": text, "created": now, "updated": now}
+        _notes.append(note)
+        _persist_notes()
+    return jsonify({"ok": True, "note": note})
+
+
+@app.route("/notes/<nid>", methods=["PUT"])
+def notes_update(nid):
+    text = ((request.get_json(silent=True) or {}).get("text") or "").strip()
+    with _notes_lock:
+        for n in _notes:
+            if n.get("id") == nid:
+                if not text:                  # cleared text = delete the note
+                    _notes.remove(n)
+                    _persist_notes()
+                    return jsonify({"ok": True, "deleted": True})
+                n["text"] = text
+                n["updated"] = time.time()
+                _persist_notes()
+                return jsonify({"ok": True, "note": n})
+    return jsonify({"ok": False, "error": "not found"}), 404
+
+
+@app.route("/notes/<nid>", methods=["DELETE"])
+def notes_delete(nid):
+    with _notes_lock:
+        before = len(_notes)
+        _notes[:] = [n for n in _notes if n.get("id") != nid]
+        if len(_notes) != before:
+            _persist_notes()
+    return jsonify({"ok": True})
+
+
+@app.route("/notes/import", methods=["POST"])
+def notes_import():
+    """One-time migration: absorb legacy per-chat localStorage notes into the
+    store. Idempotency is the caller's job (it only imports once)."""
+    global _notes_counter
+    texts = (request.get_json(silent=True) or {}).get("texts", [])
+    added = []
+    with _notes_lock:
+        for t in texts:
+            t = (t or "").strip()
+            if not t:
+                continue
+            _notes_counter += 1
+            now = time.time()
+            note = {"id": f"n{_notes_counter}", "text": t, "created": now, "updated": now}
+            _notes.append(note)
+            added.append(note)
+        if added:
+            _persist_notes()
+    return jsonify({"ok": True, "notes": added})
+
+
 import itertools
 import plistlib
 import re
@@ -760,6 +874,7 @@ def _periodic_save():
 
 
 _load_meta()
+_load_notes()
 _import_existing()
 quickaccess.load()
 threading.Thread(target=_periodic_save, daemon=True).start()

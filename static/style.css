@@ -335,22 +335,29 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
   font-size: 11px; color: var(--dim); pointer-events: none;
 }
 
-/* ---- per-chat scratchpad ---- */
+/* ---- notes panel (app-wide persistent scratchpad) ---- */
 #scratchBtn.has { color: var(--teal); border-color: var(--teal); }
-#scratchpad {
-  display: flex; flex-direction: column; max-height: 42vh;
-  background: #0c1825; border-top: 1px solid var(--line);
+#notesPanel {
+  position: fixed; top: 0; right: 0; width: 340px; height: 100%;
+  background: #0c1825; border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; z-index: 20;
 }
-#scratchpad[hidden] { display: none; }
-.scratch-head {
-  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
-  border-bottom: 1px solid var(--line-soft); color: var(--teal);
-  font-size: 11px; text-transform: uppercase; letter-spacing: 1px; user-select: none;
+#notesPanel[hidden] { display: none; }   /* id selector beats UA [hidden] */
+.notes-hint {
+  color: var(--dim); font-size: 11px; line-height: 1.5;
+  padding: 8px 12px; border-bottom: 1px solid var(--line-soft);
 }
-.scratch-hint { color: var(--dim); font-size: 10px; text-transform: none; letter-spacing: 0; flex: 1; }
-.scratch-head button { margin-left: auto; border: 0; background: none; color: var(--dim); font-size: 16px; padding: 0 2px; }
-#scratchList { overflow-y: auto; padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; }
-.scratch-empty { color: var(--dim); font-size: 11px; padding: 2px 0; }
+#notesList { flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.notes-foot { display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--line); }
+#notesInput {
+  flex: 1; resize: none; max-height: 160px; outline: none;
+  background: #0b1722; color: var(--text); border: 1px solid var(--line);
+  font-family: var(--mono); font-size: 12px; padding: 7px 9px;
+}
+#notesInput:focus { border-color: var(--teal); }
+#notesAdd { color: var(--teal); padding: 0 16px; }
+.scratch-empty { color: var(--dim); font-size: 11px; padding: 2px 0; line-height: 1.5; }
 .scratch-item {
   display: flex; align-items: flex-start; gap: 8px;
   border: 1px solid var(--line); background: #0b1722; padding: 6px 8px;
@@ -365,14 +372,6 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
   font-family: var(--mono); font-size: 12px; padding: 4px 6px; line-height: 1.45; }
 .scratch-del { flex: 0 0 auto; border: 0; background: none; color: var(--dim); font-size: 14px; padding: 0 2px; }
 .scratch-del:hover { color: var(--err); border-color: transparent; }
-.scratch-add { display: flex; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--line-soft); }
-#scratchInput {
-  flex: 1; resize: none; max-height: 120px; outline: none;
-  background: #0b1722; color: var(--text); border: 1px solid var(--line);
-  font-family: var(--mono); font-size: 12px; padding: 7px 9px;
-}
-#scratchInput:focus { border-color: var(--teal); }
-#scratchAdd { color: var(--teal); padding: 0 16px; }
 
 /* scrollbars */
 ::-webkit-scrollbar { width: 9px; height: 9px; }

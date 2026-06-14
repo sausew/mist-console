@@ -24,6 +24,7 @@
   </div>
   <div class="actions">
     <button id="modelBtn" title="Switch model">model</button>
+    <button id="notesBtn" title="Notes · a persistent scratchpad saved to disk">notes</button>
     <button id="routinesBtn" title="Routines · scheduled agents from Claude Code">routines</button>
     <button id="settingsBtn" title="Settings · active MCP servers + tools">settings</button>
   </div>
@@ -75,18 +76,19 @@
   </div>
 </aside>
 
-<div id="scratchpad" hidden>
-  <div class="scratch-head">scratchpad <span class="scratch-hint">notes to send when you're ready — kept per chat</span><button id="scratchClose">×</button></div>
-  <div id="scratchList"></div>
-  <div class="scratch-add">
-    <textarea id="scratchInput" rows="1" placeholder="Jot something to send later…  (Enter to add)"></textarea>
-    <button id="scratchAdd">add</button>
+<aside id="notesPanel" hidden>
+  <div class="capHead">notes <span class="count" id="nNotes"></span><button id="notesClose">×</button></div>
+  <div class="notes-hint">A persistent scratchpad, saved to disk. Notes stay here until you send or delete them. They survive a restart, closing the app, a force-quit, or an update.</div>
+  <div class="capBody" id="notesList"></div>
+  <div class="notes-foot">
+    <textarea id="notesInput" rows="1" placeholder="Jot something down…  (Enter to save · Shift+Enter for newline)"></textarea>
+    <button id="notesAdd">add</button>
   </div>
-</div>
+</aside>
 
 <footer id="composer">
   <div id="slashMenu" hidden></div>
-  <button id="scratchBtn" title="Scratchpad — queue notes to send later">note</button>
+  <button id="scratchBtn" title="Notes · a persistent scratchpad saved to disk">note</button>
   <button id="fileBtn" title="Attach a file (inserts its path)">file</button>
   <textarea id="input" rows="1" placeholder="Talk to MIST…  (Enter to send · Shift+Enter for newline)"></textarea>
   <button id="sendBtn">send</button>
