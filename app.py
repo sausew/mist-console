@@ -245,6 +245,29 @@ def config():
                     "default_model": _default_model})
 
 
+def _repo_info():
+    """Git origin + branch for the cwd the headless claude runs in (HARNESS).
+    'repo currently being pointed at' = where this session would push."""
+    def git(*args):
+        try:
+            return subprocess.run(["git", "-C", HARNESS, *args],
+                                  capture_output=True, text=True, timeout=5).stdout.strip()
+        except Exception:
+            return ""
+    url = git("remote", "get-url", "origin")
+    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    short = url
+    m = _re.search(r"[:/]([^/]+/[^/]+?)(?:\.git)?/?$", url)
+    if m:
+        short = m.group(1)
+    return {"cwd": HARNESS, "origin": url, "short": short, "branch": branch}
+
+
+@app.route("/repo")
+def repo():
+    return jsonify(_repo_info())
+
+
 @app.route("/sessions/<sid>/model", methods=["POST"])
 def set_model(sid):
     global _default_model

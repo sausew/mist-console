@@ -42,6 +42,10 @@ body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
 .badge.usage.lvl-ok   { color: var(--ok);   border-color: var(--ok); }
 .badge.usage.lvl-warn { color: var(--warn); border-color: var(--warn); }
 .badge.usage.lvl-crit { color: var(--err);  border-color: var(--err); font-weight: 600; }
+.badge.repo { color: #8fb0c4; }
+#repo[data-state="ok"]      { color: var(--ok);  border-color: var(--ok); }
+#repo[data-state="warn"]    { color: var(--err); border-color: var(--err); font-weight: 600; }
+#repo[data-state="unknown"] { color: var(--dim); }
 #status[data-state="idle"]     { color: var(--dim); }
 #status[data-state="thinking"] { color: var(--violet); border-color: var(--violet); }
 #status[data-state="working"]  { color: var(--teal);   border-color: var(--teal); }
