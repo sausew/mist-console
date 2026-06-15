@@ -197,6 +197,12 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 .body ul,.body ol { margin: 4px 0 9px; padding-left: 22px; }
 .body a { color: var(--teal); }
 .body blockquote { border-left: 2px solid var(--line); margin: 6px 0; padding-left: 10px; color: var(--dim); }
+/* GFM tables — flat/sharp: hairline grid, square corners, no shadow */
+.body .md-table { border-collapse: collapse; margin: 9px 0; width: auto; max-width: 100%; display: block; overflow-x: auto; font-size: 12px; }
+.body .md-table th, .body .md-table td { border: 1px solid var(--line); padding: 4px 10px; text-align: left; vertical-align: top; }
+.body .md-table th { background: #0b1722; color: var(--teal); font-weight: 600; white-space: nowrap; }
+.body .md-table tbody tr:nth-child(even) td { background: #0c1c2b; }
+.body .md-table code { background: #0b1722; }
 .cursor { display: inline-block; width: 7px; background: var(--teal); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
