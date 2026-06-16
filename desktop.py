@@ -25,15 +25,34 @@ QUIET_MARKER = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".quiet-
 QW, QH = 780, 200   # quick-entry overlay size (collapsed)
 QH_EXPANDED = QH + 340   # taller, to fit the conversation picker above the box
 OFFSCREEN = -6000   # where the overlay is parked when not summoned
+Q_BOTTOM_MARGIN = 24   # gap between the overlay's bottom edge and the screen bottom
 
 _main_window = None
 _quick_window = None
+_quiet_launch = False   # True when summoned via hotkey with the console hidden
 
 
 def _activate():
     try:
         from AppKit import NSApplication
         NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+    except Exception:
+        pass
+
+
+def _set_activation_policy(accessory):
+    """Accessory (LSUIElement) lets the overlay panel take key focus and float
+    OVER another app's fullscreen Space without switching Spaces — a Regular app
+    can't do that. We run Accessory while the overlay is the only thing showing,
+    and flip back to Regular when the main console window surfaces (Dock icon +
+    Cmd-Tab while you're actually using her). Setting the same policy twice is a
+    no-op, so calling this on every summon won't flicker. Main thread only."""
+    try:
+        from AppKit import (NSApplication, NSApplicationActivationPolicyAccessory,
+                            NSApplicationActivationPolicyRegular)
+        pol = (NSApplicationActivationPolicyAccessory if accessory
+               else NSApplicationActivationPolicyRegular)
+        NSApplication.sharedApplication().setActivationPolicy_(pol)
     except Exception:
         pass
 
@@ -202,10 +221,12 @@ def _position_panel():
     from AppKit import NSScreen
     from Foundation import NSMakeRect
     vf = NSScreen.mainScreen().visibleFrame()   # bottom-left origin
-    # Always (re)summon collapsed; the box is bottom-anchored so the picker can
-    # grow the panel upward without shifting the input.
+    # Anchored to the bottom of the screen (small margin above the Dock / screen
+    # edge). Always (re)summon collapsed; the box grows upward (_set_panel_height
+    # keeps this bottom-left origin fixed) so the picker opens above the input.
     _panel.setFrame_display_(NSMakeRect(
-        vf.origin.x + (vf.size.width - QW) / 2, vf.origin.y + 120, QW, QH), True)
+        vf.origin.x + (vf.size.width - QW) / 2, vf.origin.y + Q_BOTTOM_MARGIN,
+        QW, QH), True)
 
 
 def _set_panel_height(h):
@@ -223,6 +244,9 @@ def _show_panel():
     try:
         if _panel is None:
             _build_panel()
+        # Go Accessory so the panel can float over (and take focus inside) another
+        # app's fullscreen Space. No-op if already Accessory, so no Dock flicker.
+        _set_activation_policy(True)
         _position_panel()
         _panel.orderFrontRegardless()
         _panel.makeKeyAndOrderFront_(None)
@@ -252,6 +276,8 @@ def _surface():
     /pending-open (~1.5s) to jump to the new chat — don't evaluate_js on the main
     thread (it deadlocks)."""
     _hide_panel()
+    # Back to a normal Dock app while the full console is in use.
+    _set_activation_policy(False)
     _activate()
     try:
         _main_window.restore()
@@ -330,6 +356,9 @@ def _install_edit_menu():
 
 def _setup():
     _install_edit_menu()
+    # Baseline policy: Accessory when launched quietly as the overlay (so it floats
+    # over fullscreen); Regular when the console was opened directly to chat.
+    _set_activation_policy(_quiet_launch)
     # The double-tap-Option hotkey is owned by the always-on mist-hotkey-agent (so
     # it works even when MIST is closed). Expose a main-thread summon hook that the
     # agent calls via POST /show-quick.
@@ -352,16 +381,6 @@ def _run_flask():
     appmod.app.run(host="127.0.0.1", port=PORT, threaded=True, use_reloader=False)
 
 
-def _quick_position():
-    """Bottom-center of the main screen (x,y are top-left, from screen top-left)."""
-    try:
-        from AppKit import NSScreen
-        f = NSScreen.mainScreen().frame()
-        return (int(f.size.width) - QW) // 2, int(f.size.height) - QH - 120
-    except Exception:
-        return 400, 700
-
-
 def _wait_for_port(port, timeout=6.0):
     """Block only until Flask is actually accepting connections, instead of a
     fixed sleep — the window then appears the instant the server is ready."""
@@ -377,7 +396,7 @@ def _wait_for_port(port, timeout=6.0):
 
 
 def main():
-    global _main_window
+    global _main_window, _quiet_launch
     threading.Thread(target=_run_flask, daemon=True).start()
     _wait_for_port(PORT)  # ready in ~0.2s instead of a hardcoded 1.0s sleep
     # quiet quick-access launch: start with the console window hidden (only the
@@ -389,6 +408,7 @@ def main():
             os.remove(QUIET_MARKER)
     except Exception:
         pass
+    _quiet_launch = quiet
     _main_window = webview.create_window(
         "MIST Console", f"http://127.0.0.1:{PORT}",
         js_api=Api(), width=1120, height=800, min_size=(720, 520),
