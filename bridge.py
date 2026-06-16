@@ -246,6 +246,30 @@ class ClaudeSession:
             self._resume_tried = False
             self.stop()
 
+    def set_permission(self, mode):
+        """Switch permission mode. Goes dormant; next send revives with the new
+        mode and --resume (so conversation context carries over)."""
+        if not mode or mode == self.permission_mode:
+            return
+        self.permission_mode = mode
+        if self.alive:
+            self._resume_tried = False
+            self.stop()
+
+    def set_cwd(self, cwd):
+        """Switch the working directory (repo MIST runs in). Goes dormant and
+        starts FRESH in the new repo on the next send. We clear the resume id
+        because a claude transcript is keyed to the cwd it was created in, so
+        --resume can't carry a conversation across directories — and a different
+        repo means a different CLAUDE.md/context anyway."""
+        if not cwd or cwd == self.cwd:
+            return
+        self.cwd = cwd
+        self.claude_session_id = None
+        self._resume_tried = False
+        if self.alive:
+            self.stop()
+
     # ---- io ----------------------------------------------------------------
     def _read_stdout(self):
         for line in self.proc.stdout:
@@ -305,6 +329,10 @@ class ClaudeSession:
 
     # ---- pub/sub -----------------------------------------------------------
     def _broadcast(self, obj):
+        # Stamp every event with the wall-clock time it was seen, so the front-end
+        # can show an accurate per-message timestamp on both live turns and replay.
+        if "ts" not in obj:
+            obj["ts"] = time.time()
         self._record(obj)
         with self._lock:
             subs = list(self._subscribers)

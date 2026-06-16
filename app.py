@@ -16,7 +16,8 @@ import time
 from flask import Flask, Response, jsonify, request, send_from_directory
 
 import quickaccess
-from bridge import ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH
+from bridge import (ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH,
+                    DEFAULT_PERMISSION_MODE)
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
@@ -32,6 +33,33 @@ _meta_lock = threading.Lock()
 SESSIONS_META = os.path.join(DATA_DIR, "sessions.json")
 _pending_open = None   # session id the main window should jump to (set by quick entry)
 
+# The repo/dir MIST runs in. Defaults to the harness (where her persona lives),
+# but the user can point the Console at a different repo from the topbar repo card.
+# Persisted so the choice survives a restart; new chats inherit it.
+WORKSPACE_PATH = os.path.join(DATA_DIR, "workspace.json")
+
+
+def _load_workspace():
+    try:
+        with open(WORKSPACE_PATH) as f:
+            p = (json.load(f) or {}).get("cwd")
+        if p and os.path.isdir(p):
+            return p
+    except Exception:
+        pass
+    return HARNESS
+
+
+def _save_workspace(cwd):
+    try:
+        with open(WORKSPACE_PATH, "w") as f:
+            json.dump({"cwd": cwd}, f)
+    except Exception:
+        pass
+
+
+_workspace = _load_workspace()
+
 
 def _save_meta():
     with _meta_lock:
@@ -43,6 +71,7 @@ def _save_meta():
             data.append({"id": sid, "title": s.title, "pinned": s.pinned,
                          "pin_order": s.pin_order,
                          "last_activity": s.last_activity, "model": s.model,
+                         "permission_mode": s.permission_mode,
                          "claude_session_id": s.claude_session_id,
                          "import_path": s.import_path})
         try:
@@ -69,7 +98,8 @@ def _load_meta():
             id=sid, title=m.get("title"), pinned=m.get("pinned", False),
             pin_order=m.get("pin_order", 0),
             claude_session_id=m.get("claude_session_id"), model=m.get("model"),
-            import_path=m.get("import_path"),
+            permission_mode=m.get("permission_mode") or DEFAULT_PERMISSION_MODE,
+            import_path=m.get("import_path"), cwd=_workspace,
             last_activity=m.get("last_activity"), autostart=False)  # dormant
         _order.append(sid)
         try:
@@ -83,7 +113,8 @@ def _new_session():
     global _counter
     _counter += 1
     sid = f"s{_counter}"
-    _sessions[sid] = ClaudeSession(id=sid, model=_default_model or None)
+    _sessions[sid] = ClaudeSession(id=sid, model=_default_model or None, cwd=_workspace,
+                                   permission_mode=_default_perm or DEFAULT_PERMISSION_MODE)
     _order.append(sid)
     _save_meta()
     return sid
@@ -97,7 +128,8 @@ def _session_list():
             out.append({"id": sid, "title": s.title or "New chat", "alive": s.alive,
                         "pinned": s.pinned, "pin_order": s.pin_order,
                         "last_activity": s.last_activity,
-                        "model": s.model or ""})
+                        "model": s.model or "",
+                        "permission_mode": s.permission_mode or ""})
     return out
 
 
@@ -217,6 +249,7 @@ def get_models():
 
 
 _default_model = ""
+_default_perm = ""   # "" -> ClaudeSession falls back to DEFAULT_PERMISSION_MODE
 
 
 # ---- routes ------------------------------------------------------------------
@@ -255,11 +288,12 @@ def config():
 
 
 def _repo_info():
-    """Git origin + branch for the cwd the headless claude runs in (HARNESS).
+    """Git origin + branch for the cwd the headless claude runs in (_workspace).
     'repo currently being pointed at' = where this session would push."""
+    cwd = _workspace
     def git(*args):
         try:
-            return subprocess.run(["git", "-C", HARNESS, *args],
+            return subprocess.run(["git", "-C", cwd, *args],
                                   capture_output=True, text=True, timeout=5).stdout.strip()
         except Exception:
             return ""
@@ -269,12 +303,36 @@ def _repo_info():
     m = _re.search(r"[:/]([^/]+/[^/]+?)(?:\.git)?/?$", url)
     if m:
         short = m.group(1)
-    return {"cwd": HARNESS, "origin": url, "short": short, "branch": branch}
+    elif not url:
+        # No git remote (or not a repo) — fall back to the folder name so the
+        # badge still tells the user where MIST is working.
+        short = os.path.basename(cwd.rstrip("/")) or cwd
+    return {"cwd": cwd, "origin": url, "short": short, "branch": branch}
 
 
 @app.route("/repo")
 def repo():
     return jsonify(_repo_info())
+
+
+@app.route("/workspace", methods=["POST"])
+def set_workspace():
+    """Point the Console at a different repo/dir. Sets the global default (new
+    chats inherit it) and switches the active chat into it (fresh, since a
+    claude transcript can't --resume across directories)."""
+    global _workspace
+    data = request.get_json(silent=True) or {}
+    cwd = (data.get("cwd") or "").strip()
+    sid = data.get("session")
+    if not cwd or not os.path.isdir(cwd):
+        return jsonify({"ok": False, "error": "not a directory"}), 400
+    cwd = os.path.abspath(os.path.expanduser(cwd))
+    _workspace = cwd
+    _save_workspace(cwd)
+    s = _sessions.get(sid) if sid else None
+    if s:
+        s.set_cwd(cwd)
+    return jsonify({"ok": True, **_repo_info()})
 
 
 @app.route("/sessions/<sid>/model", methods=["POST"])
@@ -288,6 +346,24 @@ def set_model(sid):
     s.set_model(model)
     _save_meta()
     return jsonify({"ok": True, "model": model})
+
+
+_VALID_PERMS = {"default", "acceptEdits", "plan", "bypassPermissions"}
+
+
+@app.route("/sessions/<sid>/permission", methods=["POST"])
+def set_permission(sid):
+    global _default_perm
+    s = _sessions.get(sid)
+    if not s:
+        return jsonify({"ok": False}), 404
+    mode = (request.get_json(silent=True) or {}).get("mode", "")
+    if mode not in _VALID_PERMS:
+        return jsonify({"ok": False, "error": "bad mode"}), 400
+    _default_perm = mode              # new chats inherit this choice
+    s.set_permission(mode)
+    _save_meta()
+    return jsonify({"ok": True, "mode": mode})
 
 
 @app.route("/sessions/<sid>/title", methods=["POST"])

@@ -15,8 +15,8 @@
     <span class="sub">MIST</span>
   </div>
   <div class="meta">
-    <span class="badge repo" id="repo" data-state="unknown" title="Git repo this session points at">repo —</span>
-    <span class="badge" id="model">model —</span>
+    <span class="badge repo clickable" id="repo" data-state="unknown" title="Repo MIST works in · click to change">repo —</span>
+    <span class="badge clickable" id="model" title="Model in use · click to switch">model —</span>
     <span class="badge" id="perm">perm —</span>
     <span class="badge" id="status" data-state="idle">idle</span>
     <span class="badge usage" id="ctx" title="Context window used">ctx —</span>
@@ -35,6 +35,12 @@
   <div class="capHead">model <button id="modelClose">×</button></div>
   <div id="modelList"></div>
   <div class="modelnote">Applies to the active chat on your next message; new chats inherit it.</div>
+</aside>
+
+<aside id="permCard" hidden>
+  <div class="capHead">permission mode <button id="permClose">×</button></div>
+  <div id="permList"></div>
+  <div class="modelnote">Controls how freely MIST acts. Applies to the active chat on your next message.</div>
 </aside>
 
 <div id="mid">

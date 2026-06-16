@@ -338,6 +338,17 @@ class Api:
         except Exception:
             return []
 
+    def pick_folder(self):
+        """Native folder chooser — used by the repo card to pick a working dir."""
+        try:
+            win = webview.windows[0]
+            res = win.create_file_dialog(webview.FOLDER_DIALOG)
+            if not res:
+                return ""
+            return res[0] if isinstance(res, (list, tuple)) else res
+        except Exception:
+            return ""
+
     def open_url(self, url):
         """Open a link in the default browser instead of navigating the WKWebView."""
         try:

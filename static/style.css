@@ -37,6 +37,9 @@ body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
   border: 1px solid var(--line); color: var(--dim);
   padding: 2px 7px; font-size: 11px; white-space: nowrap;
 }
+/* badges that open a picker on click */
+.badge.clickable, #repo.clickable { cursor: pointer; }
+.badge.clickable:hover, #repo.clickable:hover { border-color: var(--teal); color: var(--teal); }
 .badge.usage { color: #8fb0c4; }
 /* color-coded usage levels: green headroom → yellow → red near limit */
 .badge.usage.lvl-ok   { color: var(--ok);   border-color: var(--ok); }
@@ -127,9 +130,13 @@ body.col-resizing { cursor: col-resize; user-select: none; }
   content-visibility: auto;
   contain-intrinsic-size: auto 140px;
 }
-.msg .who { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.msg .who { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+  display: flex; align-items: baseline; gap: 8px; }
 .msg.user .who   { color: var(--user); font-weight: 700; }
 .msg.mist .who   { color: var(--teal); }
+/* per-message timestamp, dimmed and not shouting in caps */
+.msg .who .ts { color: var(--dim); font-weight: 400; letter-spacing: 0;
+  text-transform: none; font-size: 10px; }
 .msg.user .body  {
   color: var(--user); white-space: pre-wrap;
   background: #102a44; border: 1px solid var(--line);
@@ -286,13 +293,14 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 .chips span { border: 1px solid var(--line); padding: 1px 6px; font-size: 11px; color: #9db3c6; }
 .chips span.pending { color: var(--warn); border-color: var(--warn); }
 
-/* ---- model card ---- */
-#modelCard {
+/* ---- model / permission card ---- */
+#modelCard, #permCard {
   position: fixed; top: 44px; right: 14px; width: 240px; z-index: 30;
   background: #0c1825; border: 1px solid var(--line);
 }
-#modelCard[hidden] { display: none; }
-#modelList { padding: 4px 0; }
+#permCard { width: 268px; }
+#modelCard[hidden], #permCard[hidden] { display: none; }
+#modelList, #permList { padding: 4px 0; }
 .modelrow {
   padding: 7px 12px; cursor: pointer; color: var(--text); font-size: 12px;
   display: flex; align-items: center; gap: 8px;
