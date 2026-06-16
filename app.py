@@ -6,6 +6,7 @@ dormant, transcript visible, process spawned lazily on first send). SSE per
 session replays full history on connect.
 """
 import json
+import logging
 import os
 import random
 import subprocess
@@ -18,6 +19,10 @@ import quickaccess
 from bridge import ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH
 
 app = Flask(__name__, static_folder="static", static_url_path="")
+
+# The UI polls /pending-open, /usage, /repo on short intervals; logging every one
+# of those at INFO grew desktop.log to ~14 MB. Keep only warnings/errors.
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 # ---- session registry + metadata persistence --------------------------------
 _sessions = {}   # id -> ClaudeSession
@@ -115,6 +120,10 @@ USAGE_CACHE = os.path.expanduser("~/.claude/usage-cache.json")
 # desktop.py sets this to a main-thread "show the quick overlay" callback; the
 # always-on hotkey agent calls it via POST /show-quick.
 show_quick = None
+# desktop.py sets this to a "surface the main console window" callback; a second
+# launch of the .app hits POST /raise so the already-running instance comes
+# forward instead of a duplicate process starting (see desktop.py single-instance).
+surface_main = None
 
 # MIST spinner verbs (reuse the ones from the CLI settings).
 def _load_spinner_verbs():
@@ -415,6 +424,17 @@ def show_quick_route():
     if show_quick:
         app = (request.get_json(silent=True) or {}).get("app")
         show_quick(app)
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "no window"}), 503
+
+
+@app.route("/raise", methods=["POST"])
+def raise_route():
+    """A second launch of the .app posts here so the running instance surfaces its
+    main window (and a duplicate process exits) instead of two consoles fighting
+    over port 5014."""
+    if surface_main:
+        surface_main()
         return jsonify({"ok": True})
     return jsonify({"ok": False, "error": "no window"}), 503
 
