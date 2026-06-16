@@ -8,8 +8,9 @@
     margin: 0; height: 100%; background: transparent; overflow: hidden;
     font-family: "SF Mono", "JetBrains Mono", Menlo, monospace;
   }
-  /* box is bottom-anchored so the picker can open upward without shifting the input */
-  .wrap { height: 100%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 30px; box-sizing: border-box; }
+  /* box is bottom-anchored so the picker can open upward without shifting the
+     input, and so the glow below it runs off the bottom edge of the screen */
+  .wrap { height: 100%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 16px; box-sizing: border-box; }
   .box {
     position: relative;
     width: 600px; box-sizing: border-box; padding: 14px 18px;
@@ -17,20 +18,26 @@
     background: rgba(12, 24, 37, 0.94);
     border: 1px solid rgba(43, 212, 212, 0.65);
     border-radius: 16px;
+    /* Long, low-alpha tail so the glow dissolves into the transparent panel
+       (which is sized to hold it — see desktop.py QW/QH) instead of hitting a
+       hard clipped edge. Each layer is fainter and wider than the last. */
     box-shadow:
-      0 0 36px 6px rgba(43, 212, 212, 0.45),
-      0 0 90px 26px rgba(43, 212, 212, 0.22),
-      0 0 160px 60px rgba(43, 212, 212, 0.10),
+      0 0 40px 4px rgba(43, 212, 212, 0.42),
+      0 0 110px 22px rgba(43, 212, 212, 0.18),
+      0 0 220px 70px rgba(43, 212, 212, 0.08),
+      0 0 360px 150px rgba(43, 212, 212, 0.035),
       inset 0 0 22px rgba(43, 212, 212, 0.08);
     animation: breathe 3.4s ease-in-out infinite;
   }
   @keyframes breathe {
     0%, 100% { box-shadow:
-      0 0 36px 6px rgba(43,212,212,0.45), 0 0 90px 26px rgba(43,212,212,0.22),
-      0 0 160px 60px rgba(43,212,212,0.10), inset 0 0 22px rgba(43,212,212,0.08); }
+      0 0 40px 4px rgba(43,212,212,0.42), 0 0 110px 22px rgba(43,212,212,0.18),
+      0 0 220px 70px rgba(43,212,212,0.08), 0 0 360px 150px rgba(43,212,212,0.035),
+      inset 0 0 22px rgba(43,212,212,0.08); }
     50% { box-shadow:
-      0 0 46px 9px rgba(43,212,212,0.55), 0 0 120px 34px rgba(43,212,212,0.28),
-      0 0 200px 80px rgba(43,212,212,0.13), inset 0 0 26px rgba(43,212,212,0.12); }
+      0 0 52px 7px rgba(43,212,212,0.50), 0 0 140px 30px rgba(43,212,212,0.22),
+      0 0 270px 90px rgba(43,212,212,0.10), 0 0 430px 180px rgba(43,212,212,0.05),
+      inset 0 0 26px rgba(43,212,212,0.12); }
   }
   .row { display: flex; align-items: center; gap: 14px; }
   .glyph { height: 26px; width: auto; display: block; filter: drop-shadow(0 0 8px rgba(43,212,212,0.7)); }

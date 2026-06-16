@@ -22,10 +22,15 @@ import app as appmod
 
 PORT = 5014
 QUIET_MARKER = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".quiet-launch")
-QW, QH = 780, 200   # quick-entry overlay size (collapsed)
+# The overlay box is 600px wide and sits at the bottom of the panel. The panel is
+# deliberately much larger than the box: its extra transparent margin is what the
+# box's soft glow fades into (box-shadow is clipped at the panel's bounds, so a
+# tight panel shows a hard rectangular edge). ~290px of slack on the sides/top
+# swallows the glow's tail; the bottom runs off the screen edge.
+QW, QH = 1280, 460   # quick-entry overlay size (collapsed)
 QH_EXPANDED = QH + 340   # taller, to fit the conversation picker above the box
 OFFSCREEN = -6000   # where the overlay is parked when not summoned
-Q_BOTTOM_MARGIN = 24   # gap between the overlay's bottom edge and the screen bottom
+Q_BOTTOM_MARGIN = 0   # panel hugs the screen bottom so the glow runs off the edge
 
 _main_window = None
 _quick_window = None
@@ -278,12 +283,33 @@ def _surface():
     _hide_panel()
     # Back to a normal Dock app while the full console is in use.
     _set_activation_policy(False)
-    _activate()
+
+    def _raise():
+        # Flipping Accessory->Regular doesn't take effect until the run loop spins,
+        # so activating + ordering the window front on the SAME tick is a no-op and
+        # the console never surfaces. Defer the raise by one tick.
+        _activate()
+        try:
+            _main_window.restore()
+            _main_window.show()
+        except Exception:
+            pass
+
     try:
-        _main_window.restore()
-        _main_window.show()
+        from PyObjCTools import AppHelper
+        AppHelper.callLater(0.08, _raise)
     except Exception:
-        pass
+        _raise()
+
+
+def _raise_main():
+    """Surface the main console window from a Flask worker thread (POST /raise from
+    a second .app launch). AppKit work must run on the main thread."""
+    try:
+        from Foundation import NSOperationQueue
+        NSOperationQueue.mainQueue().addOperationWithBlock_(_surface)
+    except Exception:
+        _surface()
 
 
 def _quick_show(app=None):
@@ -365,6 +391,9 @@ def _setup():
     # pywebview window methods are thread-safe (they marshal to the UI thread),
     # so the Flask worker thread can call this directly.
     appmod.show_quick = _quick_show
+    # A second launch of the .app posts /raise so this instance surfaces instead
+    # of a duplicate process starting (see the single-instance guard in main()).
+    appmod.surface_main = _raise_main
 
 
 def _on_start():
@@ -395,8 +424,37 @@ def _wait_for_port(port, timeout=6.0):
     return False
 
 
+def _instance_already_running(port):
+    """True if a MIST console is already serving on `port`. Probing /repo (a cheap
+    GET that only our app answers) avoids treating an unrelated listener as us."""
+    import urllib.request
+    try:
+        urllib.request.urlopen(f"http://127.0.0.1:{port}/repo", timeout=0.6)
+        return True
+    except Exception:
+        return False
+
+
+def _raise_existing(port):
+    import urllib.request
+    try:
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/raise", data=b"{}",
+                                     method="POST",
+                                     headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=3)
+    except Exception:
+        pass
+
+
 def main():
     global _main_window, _quiet_launch
+    # Single instance: if a console is already up, surface it and exit instead of
+    # starting a second process that can't bind the port and leaves two windows
+    # fighting over /show-quick and /pending-open. A quiet (overlay) launch only
+    # happens when the agent already found MIST down, so it never lands here.
+    if _instance_already_running(PORT):
+        _raise_existing(PORT)
+        return
     threading.Thread(target=_run_flask, daemon=True).start()
     _wait_for_port(PORT)  # ready in ~0.2s instead of a hardcoded 1.0s sleep
     # quiet quick-access launch: start with the console window hidden (only the
