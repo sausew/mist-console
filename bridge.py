@@ -22,6 +22,31 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DEFAULT_PERMISSION_MODE = "bypassPermissions"
 HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 
+
+def _tail_lines(path, max_lines):
+    """Return the last `max_lines` lines of a (possibly huge) jsonl without reading
+    the whole file. Seeks backward from EOF in 1 MiB blocks until enough newlines
+    are collected. A single conversation's jsonl can be hundreds of MB; reading it
+    end-to-end just to keep the last HISTORY_CAP events is what made cold start
+    take ~10s+ (worse after a reboot). This bounds the read to roughly the tail
+    we actually keep."""
+    max_lines = max(1, max_lines)
+    block = 1 << 20  # 1 MiB
+    chunks = []      # collected newest-first, joined once (prepending in a loop is O(n^2))
+    newlines = 0
+    with open(path, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        pos = f.tell()
+        while pos > 0 and newlines <= max_lines:
+            step = min(block, pos)
+            pos -= step
+            f.seek(pos)
+            chunk = f.read(step)
+            chunks.append(chunk)
+            newlines += chunk.count(b"\n")
+    data = b"".join(reversed(chunks))
+    return data.decode("utf-8", "replace").splitlines()[-max_lines:]
+
 # Live rate-limit store, refreshed from each Console turn's rate_limit_event.
 # WHY: the usage badges' % comes from ~/.claude/usage-cache.json, which only the
 # interactive-CLI statusline refreshes. During Console-only use that cache goes
@@ -106,22 +131,31 @@ class ClaudeSession:
         self._saw_init = False
         self._intentional_stop = False
 
-        self._load_history()
+        # History loads lazily on first open (snapshot_history), NOT here. At
+        # startup app.py constructs a ClaudeSession for every saved chat; eagerly
+        # reading each one's full jsonl made cold start scale with the whole
+        # data/ corpus (GBs). Dormant sessions now cost nothing until viewed.
+        self._history_loaded = False
         if autostart:
             self.ensure_started()
 
     # ---- history persistence ----------------------------------------------
     def _load_history(self):
+        with self._hist_lock:
+            if self._history_loaded:
+                return
+            self._history_loaded = True
         if not self._jsonl or not os.path.exists(self._jsonl):
             return
         try:
-            with open(self._jsonl) as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        self.history.append(json.loads(line))
-            if len(self.history) > HISTORY_CAP:
-                self.history = self.history[-HISTORY_CAP:]
+            for line in _tail_lines(self._jsonl, HISTORY_CAP):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    self.history.append(json.loads(line))
+                except Exception:
+                    pass  # skip a truncated/corrupt line, keep the rest
             # restore context % from the last context event we saw
             for obj in reversed(self.history):
                 if obj.get("type") == "context":
@@ -143,6 +177,7 @@ class ClaudeSession:
                 pass
 
     def snapshot_history(self):
+        self._load_history()   # lazy: read this chat's jsonl tail on first open
         with self._hist_lock:
             return list(self.history)
 
@@ -152,6 +187,10 @@ class ClaudeSession:
         if self._import_done or not self.import_path:
             return
         self._import_done = True
+        # History is loaded lazily, so pull it in before deciding whether to
+        # import — otherwise an already-converted chat looks empty on a fresh
+        # process and we'd re-import, duplicating every event into the jsonl.
+        self._load_history()
         if self.history:
             return
         try:
