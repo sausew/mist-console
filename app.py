@@ -510,8 +510,13 @@ def raise_route():
     main window (and a duplicate process exits) instead of two consoles fighting
     over port 5014."""
     if surface_main:
-        surface_main()
-        return jsonify({"ok": True})
+        # surface_main() returns True only if a live window was actually surfaced;
+        # a windowless zombie returns False so the relaunch evicts it (see the
+        # single-instance guard in desktop.py main()).
+        ok = surface_main() is not False
+        if ok:
+            return jsonify({"ok": True})
+        return jsonify({"ok": False, "error": "no window"}), 503
     return jsonify({"ok": False, "error": "no window"}), 503
 
 

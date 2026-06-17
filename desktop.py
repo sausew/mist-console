@@ -12,6 +12,8 @@ Adds:
 """
 import json
 import os
+import signal
+import socket
 import subprocess
 import threading
 import time
@@ -33,6 +35,12 @@ OFFSCREEN = -6000   # where the overlay is parked when not summoned
 Q_BOTTOM_MARGIN = 0   # panel hugs the screen bottom so the glow runs off the edge
 
 _main_window = None
+# Set True once the main window's close button has been hit. A pywebview window can
+# close while this process keeps running (it still owns port 5014), turning the
+# instance into a zombie that answers /raise but has no window to surface. Tracking
+# the close lets /raise report honestly so a relaunch can evict us instead of
+# deferring to a window that no longer exists.
+_window_closed = False
 _quick_window = None
 _quiet_launch = False   # True when summoned via hotkey with the console hidden
 
@@ -304,12 +312,20 @@ def _surface():
 
 def _raise_main():
     """Surface the main console window from a Flask worker thread (POST /raise from
-    a second .app launch). AppKit work must run on the main thread."""
+    a second .app launch). AppKit work must run on the main thread.
+
+    Returns True only if there is a live window to surface. False means this is a
+    windowless zombie (window closed, or never created) — the caller uses that to
+    evict us and start a fresh console rather than deferring to a window that is
+    gone."""
+    if _main_window is None or _window_closed:
+        return False
     try:
         from Foundation import NSOperationQueue
         NSOperationQueue.mainQueue().addOperationWithBlock_(_surface)
     except Exception:
         _surface()
+    return True
 
 
 def _quick_show(app=None):
@@ -447,14 +463,48 @@ def _instance_already_running(port):
 
 
 def _raise_existing(port):
+    """POST /raise to the running instance. Returns True only if it confirms a live
+    window was surfaced; False if it is a windowless zombie or the call fails — the
+    caller then evicts it instead of exiting into a dead 'is not open anymore' state."""
     import urllib.request
     try:
         req = urllib.request.Request(f"http://127.0.0.1:{port}/raise", data=b"{}",
                                      method="POST",
                                      headers={"Content-Type": "application/json"})
-        urllib.request.urlopen(req, timeout=3)
+        with urllib.request.urlopen(req, timeout=3) as r:
+            body = json.loads(r.read() or b"{}")
+            return bool(body.get("ok"))
     except Exception:
-        pass
+        return False
+
+
+def _evict_port(port):
+    """Kill whatever process is holding `port` (a zombie console with no window) so
+    this launch can bind it and start a fresh console. Skips our own PID. Returns
+    True once the port is free."""
+    try:
+        out = subprocess.run(
+            ["/usr/sbin/lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
+            capture_output=True, text=True, timeout=3).stdout.split()
+    except Exception:
+        out = []
+    me = os.getpid()
+    pids = [int(p) for p in out if p.isdigit() and int(p) != me]
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        for pid in pids:
+            try:
+                os.kill(pid, sig)
+            except Exception:
+                pass
+        # Give the port up to ~2s to free before escalating to SIGKILL.
+        for _ in range(20):
+            try:
+                with socket.create_connection(("127.0.0.1", port), 0.1):
+                    pass
+            except OSError:
+                return True  # connection refused → port is free
+            time.sleep(0.1)
+    return False
 
 
 def main():
@@ -463,9 +513,17 @@ def main():
     # starting a second process that can't bind the port and leaves two windows
     # fighting over /show-quick and /pending-open. A quiet (overlay) launch only
     # happens when the agent already found MIST down, so it never lands here.
+    #
+    # But only defer if the running instance confirms it actually surfaced a live
+    # window. A windowless zombie (window closed, process still holding 5014) answers
+    # /repo but can't raise anything — deferring to it would exit into a dead "MIST
+    # Console is not open anymore" with no window. In that case, evict it and start
+    # fresh so a relaunch always yields a real window.
     if _instance_already_running(PORT):
-        _raise_existing(PORT)
-        return
+        if _raise_existing(PORT):
+            return
+        if not _evict_port(PORT):
+            return  # couldn't free the port; bail rather than crash on bind
     threading.Thread(target=_run_flask, daemon=True).start()
     _wait_for_port(PORT)  # ready in ~0.2s instead of a hardcoded 1.0s sleep
     # quiet quick-access launch: start with the console window hidden (only the
@@ -482,6 +540,15 @@ def main():
         "MIST Console", f"http://127.0.0.1:{PORT}",
         js_api=Api(), width=1120, height=800, min_size=(720, 520),
         background_color="#0E1C2B", hidden=quiet)
+    # Mark the instance windowless when the user closes the window, so a later /raise
+    # reports honestly (see _raise_main / the single-instance guard in main()).
+    def _on_closed():
+        global _window_closed
+        _window_closed = True
+    try:
+        _main_window.events.closed += _on_closed
+    except Exception:
+        pass
     # The quick-entry overlay is a native NSPanel (built lazily in _show_panel),
     # not a pywebview window — only that can float over fullscreen apps.
     webview.start(_on_start)
