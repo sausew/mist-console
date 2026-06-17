@@ -22,6 +22,16 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DEFAULT_PERMISSION_MODE = "bypassPermissions"
 HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 
+# Context-cost cap. A headless `claude -p --resume` re-bills the WHOLE conversation
+# every turn (no interactive auto-compact here), so a long-lived chat gets quietly
+# expensive — the token sink behind "the Console burns tokens during heavy coding".
+# We surface that: a one-shot notice when occupancy crosses CTX_WARN_PCT, and a soft
+# gate at CTX_HARD_PCT that holds the first over-threshold send (then lets the next
+# one through, so the user is never locked out). Thresholds match the ctx badge's
+# own yellow(60)/red(80) cues in app.js so the warning lines up with the color.
+CTX_WARN_PCT = 60
+CTX_HARD_PCT = 80
+
 
 def _tail_lines(path, max_lines):
     """Return the last `max_lines` lines of a (possibly huge) jsonl without reading
@@ -130,6 +140,8 @@ class ClaudeSession:
         self._started_at = 0.0
         self._saw_init = False
         self._intentional_stop = False
+        self._ctx_warned = False     # one-shot soft warning at CTX_WARN_PCT
+        self._ctx_override = False    # one-shot hard-cap override (next send passes)
 
         # History loads lazily on first open (snapshot_history), NOT here. At
         # startup app.py constructs a ClaudeSession for every saved chat; eagerly
@@ -363,8 +375,43 @@ class ClaudeSession:
                 self.context_pct = round(min(used / window, 1.0) * 100, 1)
                 self._broadcast({"type": "context", "pct": self.context_pct,
                                  "used": used, "window": window})
+                self._check_context_cost()
         except Exception:
             pass
+
+    def _check_context_cost(self):
+        """Emit a one-shot warning when the conversation gets large enough that
+        re-billing the whole window each turn is wasteful, and re-arm the warnings
+        if occupancy falls back down (e.g. after a /compact or a fresh process)."""
+        pct = self.context_pct
+        if pct is None:
+            return
+        if pct < CTX_WARN_PCT:
+            self._ctx_warned = False
+            self._ctx_override = False
+        elif CTX_WARN_PCT <= pct < CTX_HARD_PCT and not self._ctx_warned:
+            self._ctx_warned = True
+            self._broadcast({
+                "type": "context_warning", "level": "warn", "pct": pct,
+                "text": (f"This chat is at {pct:.0f}% of the context window. Long "
+                         "conversations re-bill their whole history every message — "
+                         "start a “+ new chat” for unrelated tasks to save tokens.")})
+
+    def context_gate(self):
+        """Cost cap checked before forwarding a message. Returns a reason string
+        when the FIRST over-threshold send should be held (and arms a one-shot
+        override so the immediate next send goes through), else None. Restored
+        context_pct from a resumed transcript means this fires on the very first
+        message into a big resumed chat — exactly the expensive case."""
+        pct = self.context_pct
+        if pct is None or pct < CTX_HARD_PCT:
+            return None
+        if self._ctx_override:
+            return None
+        self._ctx_override = True
+        return (f"This chat is at {pct:.0f}% of the context window. Every message "
+                "now re-bills the whole conversation, which burns tokens fast. "
+                "Start a “+ new chat” for a new task, or send again to continue here.")
 
     # ---- pub/sub -----------------------------------------------------------
     def _broadcast(self, obj):

@@ -411,6 +411,12 @@ def send(sid):
     text = (request.get_json(silent=True) or {}).get("text", "").strip()
     if not text:
         return jsonify({"ok": False, "error": "empty"}), 400
+    # Context-cost cap: hold the first send into a chat that's past the threshold
+    # (a resumed/large conversation re-bills its whole window every turn). The
+    # front-end restores the user's text so nothing is lost; sending again overrides.
+    held = s.context_gate()
+    if held:
+        return jsonify({"ok": False, "held": True, "pct": s.context_pct, "reason": held})
     ok = s.send(text)
     _save_meta()
     return jsonify({"ok": ok, "title": s.title})
