@@ -120,6 +120,25 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 
 #logs { flex: 1; min-width: 0; position: relative; }
 .session-log { position: absolute; inset: 0; overflow-y: auto; padding: 16px 18px 40px; }
+
+/* floating "jump to present" pill — only shown when scrolled up off the bottom */
+#jumpBtn {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 6; background: #102536; border: 1px solid var(--teal); color: var(--teal);
+  padding: 5px 12px; font-size: 12px; letter-spacing: .3px;
+}
+#jumpBtn:hover { background: #16374f; }
+#jumpBtn[hidden] { display: none; }
+
+/* collapse/expand toggle for the tab rail — pinned to the logs' top-left corner */
+#railToggle {
+  position: absolute; top: 8px; left: 8px; z-index: 6;
+  width: 22px; height: 22px; line-height: 1; text-align: center;
+  padding: 0; background: #0c1825; color: var(--dim); border: 1px solid var(--line);
+}
+#railToggle:hover { border-color: var(--teal); color: var(--teal); }
+#mid.rail-collapsed #tabrail { width: 0; flex-basis: 0; overflow: hidden; border-right: 0; }
+#mid.rail-collapsed #railResize { display: none; }
 .session-log[hidden] { display: none; }
 .msg {
   margin: 0 0 18px; max-width: 900px;
