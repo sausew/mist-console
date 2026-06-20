@@ -10,15 +10,48 @@
       <feGaussianBlur stdDeviation="2.2" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+    <!-- detailed tropical hibiscus (ruffled veined petals, dark throat, stamen) -->
     <g id="fl">
-      <g fill="currentColor" stroke="rgba(0,0,0,.16)" stroke-width=".5">
-        <ellipse cx="0" cy="-7.5" rx="4.2" ry="7.5"/>
-        <ellipse cx="0" cy="-7.5" rx="4.2" ry="7.5" transform="rotate(72)"/>
-        <ellipse cx="0" cy="-7.5" rx="4.2" ry="7.5" transform="rotate(144)"/>
-        <ellipse cx="0" cy="-7.5" rx="4.2" ry="7.5" transform="rotate(216)"/>
-        <ellipse cx="0" cy="-7.5" rx="4.2" ry="7.5" transform="rotate(288)"/>
+      <g fill="currentColor" stroke="rgba(0,0,0,.34)" stroke-width=".7" stroke-linejoin="round">
+        <path d="M0 -1 C -7 -6 -9 -13 -6 -18 C -3 -21 -1.5 -19 0 -16 C 1.5 -19 3 -21 6 -18 C 9 -13 7 -6 0 -1 Z"/>
+        <path d="M0 -1 C -7 -6 -9 -13 -6 -18 C -3 -21 -1.5 -19 0 -16 C 1.5 -19 3 -21 6 -18 C 9 -13 7 -6 0 -1 Z" transform="rotate(72)"/>
+        <path d="M0 -1 C -7 -6 -9 -13 -6 -18 C -3 -21 -1.5 -19 0 -16 C 1.5 -19 3 -21 6 -18 C 9 -13 7 -6 0 -1 Z" transform="rotate(144)"/>
+        <path d="M0 -1 C -7 -6 -9 -13 -6 -18 C -3 -21 -1.5 -19 0 -16 C 1.5 -19 3 -21 6 -18 C 9 -13 7 -6 0 -1 Z" transform="rotate(216)"/>
+        <path d="M0 -1 C -7 -6 -9 -13 -6 -18 C -3 -21 -1.5 -19 0 -16 C 1.5 -19 3 -21 6 -18 C 9 -13 7 -6 0 -1 Z" transform="rotate(288)"/>
       </g>
-      <circle r="3" fill="#ffe27a"/>
+      <g stroke="rgba(0,0,0,.28)" stroke-width=".7" fill="none" stroke-linecap="round">
+        <path d="M0 -2 L0 -15"/><path d="M0 -2 L0 -15" transform="rotate(72)"/>
+        <path d="M0 -2 L0 -15" transform="rotate(144)"/><path d="M0 -2 L0 -15" transform="rotate(216)"/>
+        <path d="M0 -2 L0 -15" transform="rotate(288)"/>
+      </g>
+      <circle r="4.2" fill="rgba(0,0,0,.36)"/>
+      <path d="M0 0 C 4 -11 6 -20 5 -26" stroke="#ffe9a0" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <g fill="#ffce3a" stroke="rgba(110,40,0,.6)" stroke-width=".4">
+        <circle cx="5" cy="-26" r="1.9"/><circle cx="2" cy="-25" r="1.5"/>
+        <circle cx="8" cy="-24" r="1.5"/><circle cx="4" cy="-29" r="1.4"/>
+      </g>
+    </g>
+    <!-- spiky exotic starflower -->
+    <g id="fl2">
+      <g fill="currentColor" stroke="rgba(0,0,0,.32)" stroke-width=".5" stroke-linejoin="round">
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z"/>
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z" transform="rotate(51.43)"/>
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z" transform="rotate(102.86)"/>
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z" transform="rotate(154.29)"/>
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z" transform="rotate(205.71)"/>
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z" transform="rotate(257.14)"/>
+        <path d="M0 0 L-2.6 -11 L0 -20 L2.6 -11 Z" transform="rotate(308.57)"/>
+      </g>
+      <g fill="rgba(0,0,0,.24)">
+        <path d="M0 0 L-1.9 -6 L0 -13 L1.9 -6 Z" transform="rotate(25.7)"/>
+        <path d="M0 0 L-1.9 -6 L0 -13 L1.9 -6 Z" transform="rotate(77.1)"/>
+        <path d="M0 0 L-1.9 -6 L0 -13 L1.9 -6 Z" transform="rotate(128.6)"/>
+        <path d="M0 0 L-1.9 -6 L0 -13 L1.9 -6 Z" transform="rotate(180)"/>
+        <path d="M0 0 L-1.9 -6 L0 -13 L1.9 -6 Z" transform="rotate(231.4)"/>
+        <path d="M0 0 L-1.9 -6 L0 -13 L1.9 -6 Z" transform="rotate(282.9)"/>
+      </g>
+      <circle r="3.4" fill="#ffce3a" stroke="rgba(110,40,0,.55)" stroke-width=".5"/>
+      <circle r="1.4" fill="rgba(90,30,0,.7)"/>
     </g>
   </defs>
   <!-- winding stem (seamless left->right) + pedicels -->
@@ -40,12 +73,12 @@
   </g>
   <!-- colorful flowers along the top -->
   <g>
-    <use href="#fl" transform="translate(124,12) scale(1.0)"  style="color:#e85a9c"/>
-    <use href="#fl" transform="translate(326,12) scale(.95)"  style="color:#ff8a3d"/>
-    <use href="#fl" transform="translate(544,12) scale(1.0)"  style="color:#b06cf0"/>
-    <use href="#fl" transform="translate(40,30) scale(.85)"   style="color:#ffd24a"/>
-    <use href="#fl" transform="translate(440,28) scale(.85)"  style="color:#5ad1c0"/>
-    <use href="#fl" transform="translate(228,90) scale(.8)"   style="color:#ff9ecb"/>
+    <use href="#fl"  transform="translate(124,14) scale(1.05) rotate(-12)" style="color:#e0392b"/>
+    <use href="#fl2" transform="translate(326,14) scale(.95) rotate(10)" style="color:#ff7a14"/>
+    <use href="#fl"  transform="translate(544,14) scale(1.0) rotate(8)" style="color:#7b34c0"/>
+    <use href="#fl2" transform="translate(42,32) scale(.82) rotate(-14)" style="color:#f2a900"/>
+    <use href="#fl"  transform="translate(440,30) scale(.82) rotate(14)" style="color:#c81f7a"/>
+    <use href="#fl2" transform="translate(228,90) scale(.78)" style="color:#19b89a"/>
   </g>
   <!-- glowing blue arcane sigils -->
   <g filter="url(#sglow)" fill="#36a3ff">
