@@ -100,9 +100,20 @@ def _save_meta():
                          "permission_mode": s.permission_mode,
                          "claude_session_id": s.claude_session_id,
                          "import_path": s.import_path})
+        # Atomic write (temp + fsync + os.replace): open(...,"w") truncates the
+        # file to zero before writing, so a concurrent reader — another desktop.py
+        # process, or _load_meta() on a restart — could catch it empty/half-written,
+        # hit its except branch, and load ZERO sessions (every chat vanishes from
+        # the sidebar until the next clean save). os.replace is atomic on the same
+        # filesystem, so a reader always sees a complete, valid file. The temp name
+        # is PID-suffixed so two processes never stomp the same scratch file.
         try:
-            with open(SESSIONS_META, "w") as f:
+            tmp = f"{SESSIONS_META}.tmp.{os.getpid()}"
+            with open(tmp, "w") as f:
                 json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, SESSIONS_META)   # atomic on the same filesystem
         except Exception:
             pass
 
