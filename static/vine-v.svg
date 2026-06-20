@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 640" fill="none" preserveAspectRatio="xMidYMin meet">
+  <defs>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5aa544"/>
+      <stop offset="1" stop-color="#2c6a2c"/>
+    </linearGradient>
+    <filter id="glow" x="-90%" y="-90%" width="280%" height="280%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- sinuous vertical stem -->
+  <path d="M40 -10 C 66 60 14 110 40 180 C 66 250 14 300 40 370 C 66 440 14 490 40 560 C 56 600 40 630 40 650"
+        stroke="#346a2b" stroke-width="3.2" stroke-linecap="round"/>
+  <g fill="url(#leaf)" stroke="#27602a" stroke-width="1">
+    <path d="M40 40 C 64 30 80 44 80 62 C 58 66 44 58 40 40 Z"/>
+    <path d="M40 120 C 16 110 2 124 2 142 C 24 146 38 138 40 120 Z"/>
+    <path d="M40 210 C 64 200 80 214 80 232 C 58 236 44 228 40 210 Z"/>
+    <path d="M40 300 C 16 290 2 304 2 322 C 24 326 38 318 40 300 Z"/>
+    <path d="M40 392 C 64 382 80 396 80 414 C 58 418 44 410 40 392 Z"/>
+    <path d="M40 482 C 16 472 2 486 2 504 C 24 508 38 500 40 482 Z"/>
+    <path d="M40 566 C 64 556 80 570 80 588 C 58 592 44 584 40 566 Z"/>
+  </g>
+  <g filter="url(#glow)">
+    <circle cx="76" cy="62" r="4.2" fill="#2f9bff"/>
+    <circle cx="6" cy="322" r="4.2" fill="#2f9bff"/>
+    <circle cx="76" cy="588" r="3.8" fill="#7fc4ff"/>
+  </g>
+</svg>

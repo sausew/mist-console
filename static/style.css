@@ -429,37 +429,38 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
    the Terminal sheet above, so no dark patches leak through.
    ============================================================ */
 html[data-theme="solarpunk"] {
-  --bg:        #eaf3df;   /* pale leaf daylight */
-  --bg-2:      #e7f0d9cc;
-  --line:      #bcd1a3;   /* soft sage hairline */
-  --line-soft: #d2e0c0;
-  --text:      #243620;   /* deep bark/forest */
-  --dim:       #647a52;   /* muted olive */
-  --teal:      #2f86e0;   /* MIST accent, reused everywhere as the sigil blue */
-  --violet:    #7c5bd6;   /* arcane amethyst (thinking) */
-  --user:      #2d7050;   /* mossy green — the human */
-  --warn:      #c4801f;
-  --err:       #c24a2e;
-  --ok:        #4f9e3a;
+  --bg:        #dfd8b8;   /* warm sunlit linen — greens read rich against it */
+  --bg-2:      #cdd8a4cc;
+  --line:      #93b06d;   /* saturated foliage hairline */
+  --line-soft: #b3c78c;
+  --text:      #1f2c16;   /* deep bark/forest */
+  --dim:       #57703e;   /* olive */
+  --teal:      #1f74d6;   /* MIST accent, reused everywhere as the sigil blue */
+  --violet:    #6f49d0;   /* arcane amethyst (thinking) */
+  --user:      #266b39;   /* deep leaf green — the human */
+  --warn:      #b9741a;
+  --err:       #bb3f25;
+  --ok:        #3f8f2c;
   /* theme-local surfaces + sigil glow */
-  --surface:   #e7f0d9;   /* panels: topbar, rail, composer, side panels */
-  --surface-2: #f6faef;   /* input fields */
-  --code-bg:   #e9f1db;   /* code + parchment blocks */
-  --hover:     #ddeacd;
-  --active:    #d2e6bb;
-  --user-bg:   #eef5e3;
-  --sigil:     #3a9bff;   /* luminous arcane blue */
-  --glow:      0 0 5px rgba(58,155,255,.75), 0 0 11px rgba(58,155,255,.45);
+  --surface:   #cdd9a3;   /* panels: topbar, rail, composer, side panels */
+  --surface-2: #ebecc9;   /* input fields */
+  --code-bg:   #dbe3b8;   /* code + parchment blocks */
+  --hover:     #c4d491;
+  --active:    #b6cc80;
+  --user-bg:   #e2e9bf;
+  --sigil:     #2f9bff;   /* luminous arcane blue */
+  --glow:      0 0 5px rgba(47,155,255,.85), 0 0 12px rgba(47,155,255,.5);
   --radius:    12px;
   /* humanist, organic — reads as "normal text", not a terminal */
   --mono: "Seravek", "Avenir Next", "Optima", "Gill Sans", system-ui, -apple-system, sans-serif;
 }
-/* dappled greenhouse light behind everything */
+/* dappled greenhouse light behind everything — richer, more saturated pools */
 html[data-theme="solarpunk"] body {
   font-size: 14px; line-height: 1.62;
   background:
-    radial-gradient(1100px 620px at 82% -12%, rgba(120,190,95,.20), transparent 62%),
-    radial-gradient(900px 520px at -12% 112%, rgba(75,160,200,.16), transparent 60%),
+    radial-gradient(1000px 580px at 84% -10%, rgba(92,168,60,.40), transparent 60%),
+    radial-gradient(820px 520px at -10% 8%, rgba(64,150,210,.26), transparent 58%),
+    radial-gradient(900px 620px at 50% 118%, rgba(70,150,70,.34), transparent 62%),
     var(--bg);
   background-attachment: fixed;
 }
@@ -600,5 +601,54 @@ html[data-theme="solarpunk"] #sendBtn:not(:disabled):hover { border-color: var(-
 html[data-theme="solarpunk"] .tab.active { box-shadow: inset 2px 0 0 0 var(--sigil); }
 
 /* selection + scrollbar tuned to the theme */
-html[data-theme="solarpunk"] ::selection { background: rgba(58,155,255,.22); color: var(--text); }
-html[data-theme="solarpunk"] ::-webkit-scrollbar-thumb { background: #b7cda0; border-radius: 999px; }
+html[data-theme="solarpunk"] ::selection { background: rgba(47,155,255,.22); color: var(--text); }
+html[data-theme="solarpunk"] ::-webkit-scrollbar-thumb { background: #8fae64; border-radius: 999px; }
+
+/* --- living vines creeping along the margins & borders --- */
+/* anchor the pseudo-elements, and lift real content above the decoration */
+html[data-theme="solarpunk"] #topbar,
+html[data-theme="solarpunk"] #tabrail { position: relative; }
+html[data-theme="solarpunk"] .session-log,
+html[data-theme="solarpunk"] #tabs,
+html[data-theme="solarpunk"] #newTab,
+html[data-theme="solarpunk"] #topbar .brand,
+html[data-theme="solarpunk"] #topbar .meta,
+html[data-theme="solarpunk"] #topbar .actions,
+html[data-theme="solarpunk"] #composer > * { position: relative; z-index: 1; }
+html[data-theme="solarpunk"] #logs::before,
+html[data-theme="solarpunk"] #logs::after,
+html[data-theme="solarpunk"] #tabrail::after,
+html[data-theme="solarpunk"] #composer::before,
+html[data-theme="solarpunk"] #topbar::after {
+  content: ""; position: absolute; pointer-events: none; z-index: 0;
+  background-repeat: no-repeat;
+}
+/* corner flourishes framing the conversation */
+html[data-theme="solarpunk"] #logs::before {
+  top: 0; left: 0; width: 224px; height: 224px;
+  background-image: url("vine-corner.svg"); background-size: contain; background-position: top left;
+  opacity: .8;
+}
+html[data-theme="solarpunk"] #logs::after {
+  bottom: 0; right: 0; width: 224px; height: 224px;
+  background-image: url("vine-corner.svg"); background-size: contain; background-position: bottom right;
+  transform: rotate(180deg); opacity: .62;
+}
+/* creeper running down the rail / chat seam */
+html[data-theme="solarpunk"] #tabrail::after {
+  top: 0; right: 0; width: 60px; height: 100%;
+  background-image: url("vine-v.svg"); background-size: 60px auto; background-repeat: repeat-y;
+  background-position: top right; opacity: .5;
+}
+/* creeper along the composer's top border */
+html[data-theme="solarpunk"] #composer::before {
+  top: 0; left: 0; right: 0; height: 26px;
+  background-image: url("vine-h.svg"); background-size: auto 26px; background-repeat: repeat-x;
+  background-position: left top; opacity: .5;
+}
+/* creeper along the top bar's bottom border */
+html[data-theme="solarpunk"] #topbar::after {
+  bottom: 0; left: 0; right: 0; height: 22px;
+  background-image: url("vine-h.svg"); background-size: auto 22px; background-repeat: repeat-x;
+  background-position: left bottom; transform: scaleY(-1); opacity: .42;
+}
