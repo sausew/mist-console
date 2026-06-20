@@ -608,7 +608,9 @@ html[data-theme="solarpunk"] ::-webkit-scrollbar-thumb { background: #8fae64; bo
 /* anchor the pseudo-elements, and lift real content above the decoration */
 html[data-theme="solarpunk"] #topbar,
 html[data-theme="solarpunk"] #tabrail { position: relative; }
-html[data-theme="solarpunk"] .session-log,
+/* .session-log must KEEP position:absolute/inset:0 or its scroll breaks — only
+   raise its stacking, don't change positioning. */
+html[data-theme="solarpunk"] .session-log { z-index: 1; }
 html[data-theme="solarpunk"] #tabs,
 html[data-theme="solarpunk"] #newTab,
 html[data-theme="solarpunk"] #topbar .brand,
@@ -652,3 +654,38 @@ html[data-theme="solarpunk"] #topbar::after {
   background-image: url("vine-h.svg"); background-size: auto 22px; background-repeat: repeat-x;
   background-position: left bottom; transform: scaleY(-1); opacity: .42;
 }
+
+/* --- make top-bar chips/buttons + sidebar tabs read as raised cards --- */
+html[data-theme="solarpunk"] .badge {
+  background: var(--surface-2); box-shadow: 0 1px 2px rgba(40,70,30,.14);
+}
+html[data-theme="solarpunk"] .actions button,
+html[data-theme="solarpunk"] #newTab,
+html[data-theme="solarpunk"] #scratchBtn,
+html[data-theme="solarpunk"] #fileBtn,
+html[data-theme="solarpunk"] #sendBtn {
+  background: var(--surface-2); border-color: #7fa254;
+  box-shadow: 0 1px 2px rgba(40,70,30,.18);
+}
+html[data-theme="solarpunk"] .actions button:hover,
+html[data-theme="solarpunk"] #newTab:hover,
+html[data-theme="solarpunk"] #scratchBtn:hover,
+html[data-theme="solarpunk"] #fileBtn:hover,
+html[data-theme="solarpunk"] #sendBtn:not(:disabled):hover {
+  border-color: var(--sigil); color: var(--sigil);
+  box-shadow: 0 0 10px rgba(47,155,255,.32);
+}
+/* each tab is a distinct rounded chip with its own ground */
+html[data-theme="solarpunk"] .tab {
+  margin: 4px 8px; padding: 7px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  box-shadow: 0 1px 2px rgba(40,70,30,.11);
+}
+html[data-theme="solarpunk"] .tab:hover { background: var(--hover); border-color: #7fa254; }
+html[data-theme="solarpunk"] .tab.active {
+  background: var(--active); color: var(--text);
+  border: 1px solid var(--sigil); padding-left: 10px;
+  box-shadow: 0 0 0 1px rgba(47,155,255,.45), 0 1px 4px rgba(40,70,30,.18);
+}
+html[data-theme="solarpunk"] .tab.pinned { border-left: 3px solid var(--user); }
+html[data-theme="solarpunk"] .tab.pinned.active { border: 1px solid var(--sigil); border-left: 3px solid var(--user); }
