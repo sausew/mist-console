@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
   <defs>
     <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#5aa544"/>
-      <stop offset="1" stop-color="#2c6a2c"/>
+      <stop offset="0" stop-color="#356b32"/>
+      <stop offset="1" stop-color="#10381a"/>
     </linearGradient>
-    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="3.4" result="b"/>
+    <filter id="glow" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="2.6" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <!-- main stem creeping in from the corner -->
-  <path d="M-6 4 C 58 22 40 84 96 102 C 152 120 150 182 130 244"
-        stroke="#346a2b" stroke-width="3.6" stroke-linecap="round"/>
-  <!-- a branch -->
-  <path d="M96 102 C 120 96 138 70 134 44" stroke="#346a2b" stroke-width="2.6" stroke-linecap="round"/>
-  <g fill="url(#leaf)" stroke="#27602a" stroke-width="1">
+  <!-- main stem + a branch, deep forest -->
+  <path d="M-6 4 C 58 22 40 84 96 102 C 152 120 152 184 130 222" stroke="#1d4720" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M96 102 C 120 96 138 70 134 44" stroke="#1d4720" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- thin pedicels out to the floating sigils -->
+  <path d="M130 108 Q152 96 166 86" stroke="#1d4720" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M90 108 Q70 120 60 132" stroke="#1d4720" stroke-width="1.5" stroke-linecap="round"/>
+  <g fill="url(#leaf)" stroke="#0d2f14" stroke-width="1">
     <path d="M36 22 C 58 6 86 12 96 32 C 74 42 48 40 36 22 Z"/>
     <path d="M62 70 C 46 48 52 22 74 14 C 84 38 80 60 62 70 Z"/>
     <path d="M96 102 C 122 90 146 98 156 118 C 132 128 108 124 96 102 Z"/>
@@ -23,12 +24,10 @@
     <path d="M126 200 C 150 190 172 200 180 220 C 156 228 134 222 126 200 Z"/>
   </g>
   <!-- tendril curl at the growing tip -->
-  <path d="M130 244 c 16 -12 9 -30 -7 -25 c -11 4 -7 19 5 14"
-        stroke="#346a2b" stroke-width="2.4" stroke-linecap="round"/>
-  <!-- glowing arcane blossoms -->
-  <g filter="url(#glow)">
-    <circle cx="96" cy="32" r="5" fill="#2f9bff"/>
-    <circle cx="156" cy="118" r="4.4" fill="#2f9bff"/>
-    <circle cx="184" cy="46" r="3.6" fill="#7fc4ff"/>
+  <path d="M130 222 c 16 -11 9 -28 -7 -23 c -10 3 -7 18 4 13" stroke="#1d4720" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- separate glowing arcane sigils (4-point stars), floating off the pedicels -->
+  <g filter="url(#glow)" fill="#2f9bff">
+    <path transform="translate(166,84)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
+    <path transform="translate(58,134) scale(.82)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
   </g>
 </svg>

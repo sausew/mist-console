@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import random
+import re
 import subprocess
 import threading
 import time
@@ -54,6 +55,31 @@ def _save_workspace(cwd):
     try:
         with open(WORKSPACE_PATH, "w") as f:
             json.dump({"cwd": cwd}, f)
+    except Exception:
+        pass
+
+
+# Theme persists server-side (not just in the WebView's localStorage, which can
+# be wiped when the app is fully closed/reopened), so the chosen look survives.
+THEME_PATH = os.path.join(DATA_DIR, "theme.json")
+_VALID_THEME = re.compile(r"^[a-z0-9_-]{1,40}$")
+
+
+def _load_theme():
+    try:
+        with open(THEME_PATH) as f:
+            t = (json.load(f) or {}).get("theme")
+        if t and _VALID_THEME.match(t):
+            return t
+    except Exception:
+        pass
+    return "terminal"
+
+
+def _save_theme(theme):
+    try:
+        with open(THEME_PATH, "w") as f:
+            json.dump({"theme": theme}, f)
     except Exception:
         pass
 
@@ -250,12 +276,36 @@ def get_models():
 
 _default_model = ""
 _default_perm = ""   # "" -> ClaudeSession falls back to DEFAULT_PERMISSION_MODE
+_theme = _load_theme()
 
 
 # ---- routes ------------------------------------------------------------------
 @app.route("/")
 def index():
-    return send_from_directory("static", "index.html")
+    # Inject the server-saved theme as the pre-paint default so the chosen look
+    # is correct on first paint even if the WebView's localStorage was wiped.
+    try:
+        with open(os.path.join(app.static_folder, "index.html")) as f:
+            html = f.read()
+        theme = _load_theme()
+        html = html.replace('||"terminal"', '||' + json.dumps(theme))
+        html = html.replace('<html lang="en">', '<html lang="en" data-theme="%s">' % theme)
+        return Response(html, mimetype="text/html")
+    except Exception:
+        return send_from_directory("static", "index.html")
+
+
+@app.route("/theme", methods=["GET", "POST"])
+def theme():
+    global _theme
+    if request.method == "POST":
+        t = ((request.get_json(silent=True) or {}).get("theme") or "").strip()
+        if not _VALID_THEME.match(t):
+            return jsonify({"ok": False, "error": "invalid theme"}), 400
+        _theme = t
+        _save_theme(t)
+        return jsonify({"ok": True, "theme": t})
+    return jsonify({"theme": _load_theme()})
 
 
 @app.route("/sessions", methods=["GET"])

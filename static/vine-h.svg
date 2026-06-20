@@ -1,18 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 80" fill="none" preserveAspectRatio="xMinYMid meet">
   <defs>
     <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#5aa544"/>
-      <stop offset="1" stop-color="#2c6a2c"/>
+      <stop offset="0" stop-color="#356b32"/>
+      <stop offset="1" stop-color="#10381a"/>
     </linearGradient>
-    <filter id="glow" x="-90%" y="-90%" width="280%" height="280%">
-      <feGaussianBlur stdDeviation="3.2" result="b"/>
+    <filter id="glow" x="-60%" y="-150%" width="220%" height="400%">
+      <feGaussianBlur stdDeviation="2.6" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <!-- sinuous horizontal stem -->
   <path d="M-10 40 C 60 66 110 14 180 40 C 250 66 300 14 370 40 C 440 66 490 14 560 40 C 600 56 630 40 650 40"
-        stroke="#346a2b" stroke-width="3.2" stroke-linecap="round"/>
-  <g fill="url(#leaf)" stroke="#27602a" stroke-width="1">
+        stroke="#1d4720" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- pedicels to floating sigils -->
+  <path d="M96 37 Q92 22 92 14" stroke="#1d4720" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M264 43 Q262 60 262 68" stroke="#1d4720" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M446 37 Q444 22 444 14" stroke="#1d4720" stroke-width="1.4" stroke-linecap="round"/>
+  <g fill="url(#leaf)" stroke="#0d2f14" stroke-width="1">
     <path d="M40 40 C 30 16 44 2 62 2 C 66 24 58 38 40 40 Z"/>
     <path d="M120 40 C 110 64 124 78 142 78 C 146 56 138 42 120 40 Z"/>
     <path d="M210 40 C 200 16 214 2 232 2 C 236 24 228 38 210 40 Z"/>
@@ -21,9 +24,9 @@
     <path d="M482 40 C 472 64 486 78 504 78 C 508 56 500 42 482 40 Z"/>
     <path d="M566 40 C 556 16 570 2 588 2 C 592 24 584 38 566 40 Z"/>
   </g>
-  <g filter="url(#glow)">
-    <circle cx="62" cy="6" r="4.2" fill="#2f9bff"/>
-    <circle cx="322" cy="74" r="4.2" fill="#2f9bff"/>
-    <circle cx="588" cy="6" r="3.8" fill="#7fc4ff"/>
+  <g filter="url(#glow)" fill="#2f9bff">
+    <path transform="translate(92,12)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
+    <path transform="translate(262,70) scale(.85)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
+    <path transform="translate(444,12) scale(.78)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
   </g>
 </svg>
