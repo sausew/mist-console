@@ -31,6 +31,8 @@ body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
   display: flex; align-items: center; gap: 14px;
   padding: 8px 14px; border-bottom: 1px solid var(--line);
   background: #0c1825;
+  /* above the side panels so their trigger buttons stay clickable (toggle-to-close) */
+  position: relative; z-index: 40;
 }
 .brand { display: flex; align-items: center; gap: 8px; }
 .logo-img { height: 24px; width: auto; display: block; }
@@ -244,8 +246,9 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 .notice.err { color: var(--err); border-color: var(--err); }
 
 /* ---- capabilities panel ---- */
+/* start below the top bar so the trigger buttons stay visible + clickable */
 #capPanel, #routinesPanel {
-  position: fixed; top: 0; right: 0; width: 340px; height: 100%;
+  position: fixed; top: var(--topbar-h, 0px); right: 0; width: 340px; height: calc(100% - var(--topbar-h, 0px));
   background: #0c1825; border-left: 1px solid var(--line);
   display: flex; flex-direction: column; z-index: 20;
 }
@@ -381,7 +384,7 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 /* ---- notes panel (app-wide persistent scratchpad) ---- */
 #scratchBtn.has { color: var(--teal); border-color: var(--teal); }
 #notesPanel {
-  position: fixed; top: 0; right: 0; width: 340px; height: 100%;
+  position: fixed; top: var(--topbar-h, 0px); right: 0; width: 340px; height: calc(100% - var(--topbar-h, 0px));
   background: #0c1825; border-left: 1px solid var(--line);
   display: flex; flex-direction: column; z-index: 20;
 }
