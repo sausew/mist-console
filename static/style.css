@@ -1,4 +1,8 @@
-/* MIST Console — flat/sharp Cloud palette. Square corners, hairlines, no shadows. */
+/* MIST Console — flat/sharp Cloud palette. Square corners, hairlines, no shadows.
+   This sheet IS the default "Terminal" theme. To add another theme: register it
+   in THEMES (app.js) and override what you need under html[data-theme="<id>"]
+   below. The active theme lives in <html data-theme> (set pre-paint in index.html
+   and persisted to localStorage as "theme"). */
 :root {
   --bg:        #0E1C2B;   /* deep Cloud night */
   --bg-2:      #11233440; /* translucent panel */

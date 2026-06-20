@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MIST Console</title>
+<!-- Apply the saved theme before CSS paints so switching never flashes. -->
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -67,6 +69,7 @@
 <aside id="capPanel" hidden>
   <div class="capHead">settings <button id="capClose">×</button></div>
   <div class="capBody">
+    <h4>theme</h4><div id="themeList"></div>
     <h4>quick access</h4>
     <div class="qa">
       <div class="qa-row">
