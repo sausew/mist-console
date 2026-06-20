@@ -429,38 +429,38 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
    the Terminal sheet above, so no dark patches leak through.
    ============================================================ */
 html[data-theme="solarpunk"] {
-  --bg:        #d7d2ac;   /* warm sunlit linen — deep greens read rich against it */
-  --bg-2:      #c3d196cc;
-  --line:      #3f6b34;   /* deep forest hairline */
-  --line-soft: #6d9152;
-  --text:      #16240f;   /* near-black forest bark */
-  --dim:       #3f5a2b;   /* deep olive */
-  --teal:      #1f74d6;   /* MIST accent, reused everywhere as the sigil blue */
-  --violet:    #6f49d0;   /* arcane amethyst (thinking) */
-  --user:      #1c5325;   /* deep leaf green — the human */
-  --warn:      #a9670f;
-  --err:       #af3a22;
-  --ok:        #2f7a22;
+  --bg:        #0a1f1a;   /* deep phthalo-green night */
+  --bg-2:      #103029cc;
+  --line:      #2e6253;   /* phthalo hairline */
+  --line-soft: #214a40;
+  --text:      #d9e8df;   /* pale mint white */
+  --dim:       #80a597;   /* muted sage */
+  --teal:      #36a3ff;   /* MIST accent / sigil blue (glows on the dark green) */
+  --violet:    #a596ff;   /* arcane amethyst (thinking) */
+  --user:      #4eb878;   /* lush emerald — the human */
+  --warn:      #e2a838;
+  --err:       #ff7a6b;
+  --ok:        #5ccf7e;
   /* theme-local surfaces + sigil glow */
-  --surface:   #aec47c;   /* panels: topbar, rail, composer, side panels (deeper) */
-  --surface-2: #dde4b6;   /* input fields / chips — lighter so they stand out */
-  --code-bg:   #cdd9a0;   /* code + parchment blocks */
-  --hover:     #a0ba6a;
-  --active:    #90ad5b;
-  --user-bg:   #d8e2ad;
-  --sigil:     #2f9bff;   /* luminous arcane blue */
-  --glow:      0 0 5px rgba(47,155,255,.85), 0 0 12px rgba(47,155,255,.5);
+  --surface:   #103029;   /* panels: topbar, rail, composer, side panels */
+  --surface-2: #17413a;   /* input fields / chips — lighter phthalo so they stand out */
+  --code-bg:   #0c2722;   /* code blocks */
+  --hover:     #163a33;
+  --active:    #1d483f;
+  --user-bg:   #123a30;
+  --sigil:     #36a3ff;   /* luminous arcane blue */
+  --glow:      0 0 5px rgba(54,163,255,.9), 0 0 13px rgba(54,163,255,.55);
   --radius:    12px;
   /* humanist, organic — reads as "normal text", not a terminal */
   --mono: "Seravek", "Avenir Next", "Optima", "Gill Sans", system-ui, -apple-system, sans-serif;
 }
-/* dappled greenhouse light behind everything — richer, more saturated pools */
+/* bioluminescent dapples glowing through the deep phthalo dark */
 html[data-theme="solarpunk"] body {
   font-size: 14px; line-height: 1.62;
   background:
-    radial-gradient(1000px 580px at 84% -10%, rgba(92,168,60,.40), transparent 60%),
-    radial-gradient(820px 520px at -10% 8%, rgba(64,150,210,.26), transparent 58%),
-    radial-gradient(900px 620px at 50% 118%, rgba(70,150,70,.34), transparent 62%),
+    radial-gradient(1000px 580px at 84% -10%, rgba(56,178,138,.20), transparent 60%),
+    radial-gradient(820px 520px at -10% 8%, rgba(54,163,255,.14), transparent 58%),
+    radial-gradient(900px 620px at 50% 118%, rgba(46,150,112,.20), transparent 62%),
     var(--bg);
   background-attachment: fixed;
 }
@@ -533,7 +533,7 @@ html[data-theme="solarpunk"] .tool .tool-result,
 html[data-theme="solarpunk"] .chips span,
 html[data-theme="solarpunk"] .routines-note code,
 html[data-theme="solarpunk"] .badge.usage,
-html[data-theme="solarpunk"] .badge.repo { color: #566848; }
+html[data-theme="solarpunk"] .badge.repo { color: #9ec1b1; }
 html[data-theme="solarpunk"] .tool pre { color: var(--text); }
 
 /* --- soft edges everywhere (the opposite of sharp) --- */
@@ -569,10 +569,10 @@ html[data-theme="solarpunk"] .tool,
 html[data-theme="solarpunk"] .msg.user .body,
 html[data-theme="solarpunk"] #modelCard,
 html[data-theme="solarpunk"] #permCard,
-html[data-theme="solarpunk"] .scratch-item { box-shadow: 0 1px 4px rgba(40,70,30,.10); }
+html[data-theme="solarpunk"] .scratch-item { box-shadow: 0 1px 4px rgba(0,0,0,.10); }
 html[data-theme="solarpunk"] #capPanel,
 html[data-theme="solarpunk"] #routinesPanel,
-html[data-theme="solarpunk"] #notesPanel { box-shadow: -2px 0 14px rgba(40,70,30,.10); }
+html[data-theme="solarpunk"] #notesPanel { box-shadow: -2px 0 14px rgba(0,0,0,.10); }
 
 /* --- glowing blue arcane sigils --- */
 html[data-theme="solarpunk"] .logo,
@@ -669,7 +669,7 @@ html[data-theme="solarpunk"] #topbar::after {
 
 /* --- make top-bar chips/buttons + sidebar tabs read as raised cards --- */
 html[data-theme="solarpunk"] .badge {
-  background: var(--surface-2); box-shadow: 0 1px 2px rgba(40,70,30,.14);
+  background: var(--surface-2); box-shadow: 0 1px 2px rgba(0,0,0,.14);
 }
 html[data-theme="solarpunk"] .actions button,
 html[data-theme="solarpunk"] #newTab,
@@ -677,7 +677,7 @@ html[data-theme="solarpunk"] #scratchBtn,
 html[data-theme="solarpunk"] #fileBtn,
 html[data-theme="solarpunk"] #sendBtn {
   background: var(--surface-2); border-color: #7fa254;
-  box-shadow: 0 1px 2px rgba(40,70,30,.18);
+  box-shadow: 0 1px 2px rgba(0,0,0,.18);
 }
 html[data-theme="solarpunk"] .actions button:hover,
 html[data-theme="solarpunk"] #newTab:hover,
@@ -691,13 +691,13 @@ html[data-theme="solarpunk"] #sendBtn:not(:disabled):hover {
 html[data-theme="solarpunk"] .tab {
   margin: 4px 8px; padding: 7px 10px; border-radius: 10px;
   border: 1px solid var(--line); background: var(--surface-2);
-  box-shadow: 0 1px 2px rgba(40,70,30,.11);
+  box-shadow: 0 1px 2px rgba(0,0,0,.11);
 }
 html[data-theme="solarpunk"] .tab:hover { background: var(--hover); border-color: #7fa254; }
 html[data-theme="solarpunk"] .tab.active {
   background: var(--active); color: var(--text);
   border: 1px solid var(--sigil); padding-left: 10px;
-  box-shadow: 0 0 0 1px rgba(47,155,255,.45), 0 1px 4px rgba(40,70,30,.18);
+  box-shadow: 0 0 0 1px rgba(47,155,255,.45), 0 1px 4px rgba(0,0,0,.18);
 }
 html[data-theme="solarpunk"] .tab.pinned { border-left: 3px solid var(--user); }
 html[data-theme="solarpunk"] .tab.pinned.active { border: 1px solid var(--sigil); border-left: 3px solid var(--user); }

@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 640" fill="none" preserveAspectRatio="xMidYMin meet">
   <defs>
     <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#356b32"/>
-      <stop offset="1" stop-color="#10381a"/>
+      <stop offset="0" stop-color="#54b86c"/>
+      <stop offset="1" stop-color="#1d7a40"/>
     </linearGradient>
     <filter id="glow" x="-150%" y="-60%" width="400%" height="220%">
       <feGaussianBlur stdDeviation="2.6" result="b"/>
@@ -10,12 +10,12 @@
     </filter>
   </defs>
   <path d="M40 -10 C 66 60 14 110 40 180 C 66 250 14 300 40 370 C 66 440 14 490 40 560 C 56 600 40 630 40 650"
-        stroke="#1d4720" stroke-width="3.2" stroke-linecap="round"/>
+        stroke="#2f8a4c" stroke-width="3.2" stroke-linecap="round"/>
   <!-- pedicels to floating sigils -->
-  <path d="M37 96 Q22 92 14 92" stroke="#1d4720" stroke-width="1.4" stroke-linecap="round"/>
-  <path d="M43 264 Q60 262 68 262" stroke="#1d4720" stroke-width="1.4" stroke-linecap="round"/>
-  <path d="M37 446 Q22 444 14 444" stroke="#1d4720" stroke-width="1.4" stroke-linecap="round"/>
-  <g fill="url(#leaf)" stroke="#0d2f14" stroke-width="1">
+  <path d="M37 96 Q22 92 14 92" stroke="#2f8a4c" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M43 264 Q60 262 68 262" stroke="#2f8a4c" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M37 446 Q22 444 14 444" stroke="#2f8a4c" stroke-width="1.4" stroke-linecap="round"/>
+  <g fill="url(#leaf)" stroke="#0e4a25" stroke-width="1">
     <path d="M40 40 C 64 30 80 44 80 62 C 58 66 44 58 40 40 Z"/>
     <path d="M40 120 C 16 110 2 124 2 142 C 24 146 38 138 40 120 Z"/>
     <path d="M40 210 C 64 200 80 214 80 232 C 58 236 44 228 40 210 Z"/>
@@ -24,7 +24,7 @@
     <path d="M40 482 C 16 472 2 486 2 504 C 24 508 38 500 40 482 Z"/>
     <path d="M40 566 C 64 556 80 570 80 588 C 58 592 44 584 40 566 Z"/>
   </g>
-  <g filter="url(#glow)" fill="#2f9bff">
+  <g filter="url(#glow)" fill="#36a3ff">
     <path transform="translate(12,92)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
     <path transform="translate(70,262) scale(.85)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
     <path transform="translate(12,444) scale(.78)" d="M0 -7 Q1.1 -1.1 7 0 Q1.1 1.1 0 7 Q-1.1 1.1 -7 0 Q-1.1 -1.1 0 -7 Z"/>
