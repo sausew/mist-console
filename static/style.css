@@ -313,8 +313,10 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 .chips span.pending { color: var(--warn); border-color: var(--warn); }
 
 /* ---- model / permission card ---- */
+/* top/left are set in JS so the menu drops directly under the badge or button
+   that opened it (anchorCard), instead of floating detached in the corner. */
 #modelCard, #permCard {
-  position: fixed; top: 44px; right: 14px; width: 240px; z-index: 30;
+  position: fixed; top: 44px; left: auto; right: 14px; width: 240px; z-index: 30;
   background: #0c1825; border: 1px solid var(--line);
 }
 #permCard { width: 268px; }
