@@ -3,10 +3,33 @@
 <head>
 <meta charset="utf-8">
 <title>MIST</title>
+<!-- match the app's chosen theme (shared localStorage; server also injects it). -->
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}</script>
 <style>
+  :root {
+    --q-acc: 43,212,212;     /* accent / glow rgb */
+    --q-vio: 155,140,255;    /* secondary rgb */
+    --q-bg: 12,24,37;        /* panel rgb */
+    --q-text: #e6f2fa;
+    --q-text2: #cfe8ee;
+    --q-dim: #5f7d92;
+    --q-err: #ff6b6b;
+    --q-font: "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  /* Solarpunk: deep-forest panel, glowing arcane-blue summon glow, humanist text */
+  html[data-theme="solarpunk"] {
+    --q-acc: 47,155,255;
+    --q-vio: 124,91,214;
+    --q-bg: 18,40,22;
+    --q-text: #eef5e3;
+    --q-text2: #d7e8c8;
+    --q-dim: #8fae6e;
+    --q-err: #d1604a;
+    --q-font: "Seravek", "Avenir Next", "Optima", "Gill Sans", system-ui, sans-serif;
+  }
   html, body {
     margin: 0; height: 100%; background: transparent; overflow: hidden;
-    font-family: "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-family: var(--q-font);
   }
   /* box is bottom-anchored so the picker can open upward without shifting the
      input, and so the glow below it runs off the bottom edge of the screen */
@@ -15,84 +38,84 @@
     position: relative;
     width: 600px; box-sizing: border-box; padding: 14px 18px;
     display: flex; flex-direction: column;
-    background: rgba(12, 24, 37, 0.94);
-    border: 1px solid rgba(43, 212, 212, 0.65);
+    background: rgba(var(--q-bg), 0.94);
+    border: 1px solid rgba(var(--q-acc), 0.65);
     border-radius: 16px;
     /* Long, low-alpha tail so the glow dissolves into the transparent panel
        (which is sized to hold it — see desktop.py QW/QH) instead of hitting a
        hard clipped edge. Each layer is fainter and wider than the last. */
     box-shadow:
-      0 0 40px 4px rgba(43, 212, 212, 0.42),
-      0 0 110px 22px rgba(43, 212, 212, 0.18),
-      0 0 220px 70px rgba(43, 212, 212, 0.08),
-      0 0 360px 150px rgba(43, 212, 212, 0.035),
-      inset 0 0 22px rgba(43, 212, 212, 0.08);
+      0 0 40px 4px rgba(var(--q-acc), 0.42),
+      0 0 110px 22px rgba(var(--q-acc), 0.18),
+      0 0 220px 70px rgba(var(--q-acc), 0.08),
+      0 0 360px 150px rgba(var(--q-acc), 0.035),
+      inset 0 0 22px rgba(var(--q-acc), 0.08);
     animation: breathe 3.4s ease-in-out infinite;
   }
   @keyframes breathe {
     0%, 100% { box-shadow:
-      0 0 40px 4px rgba(43,212,212,0.42), 0 0 110px 22px rgba(43,212,212,0.18),
-      0 0 220px 70px rgba(43,212,212,0.08), 0 0 360px 150px rgba(43,212,212,0.035),
-      inset 0 0 22px rgba(43,212,212,0.08); }
+      0 0 40px 4px rgba(var(--q-acc),0.42), 0 0 110px 22px rgba(var(--q-acc),0.18),
+      0 0 220px 70px rgba(var(--q-acc),0.08), 0 0 360px 150px rgba(var(--q-acc),0.035),
+      inset 0 0 22px rgba(var(--q-acc),0.08); }
     50% { box-shadow:
-      0 0 52px 7px rgba(43,212,212,0.50), 0 0 140px 30px rgba(43,212,212,0.22),
-      0 0 270px 90px rgba(43,212,212,0.10), 0 0 430px 180px rgba(43,212,212,0.05),
-      inset 0 0 26px rgba(43,212,212,0.12); }
+      0 0 52px 7px rgba(var(--q-acc),0.50), 0 0 140px 30px rgba(var(--q-acc),0.22),
+      0 0 270px 90px rgba(var(--q-acc),0.10), 0 0 430px 180px rgba(var(--q-acc),0.05),
+      inset 0 0 26px rgba(var(--q-acc),0.12); }
   }
   .row { display: flex; align-items: center; gap: 14px; }
-  .glyph { height: 26px; width: auto; display: block; filter: drop-shadow(0 0 8px rgba(43,212,212,0.7)); }
+  .glyph { height: 26px; width: auto; display: block; filter: drop-shadow(0 0 8px rgba(var(--q-acc),0.7)); }
   input.q {
     flex: 1; min-width: 0; background: transparent; border: none; outline: none;
-    color: #e6f2fa; font-size: 18px; font-family: inherit; caret-color: #2bd4d4;
+    color: var(--q-text); font-size: 18px; font-family: inherit; caret-color: rgb(var(--q-acc));
   }
-  input.q::placeholder { color: #5f7d92; }
+  input.q::placeholder { color: var(--q-dim); }
   .ab {
-    background: transparent; border: 1px solid rgba(43,212,212,0.30); border-radius: 9px;
-    color: #cfe8ff; font-size: 15px; line-height: 1; padding: 6px 8px; cursor: pointer;
+    background: transparent; border: 1px solid rgba(var(--q-acc),0.30); border-radius: 9px;
+    color: var(--q-text2); font-size: 15px; line-height: 1; padding: 6px 8px; cursor: pointer;
   }
-  .ab:hover, .ab.on { border-color: #2bd4d4; background: rgba(43,212,212,0.14); }
+  .ab:hover, .ab.on { border-color: rgb(var(--q-acc)); background: rgba(var(--q-acc),0.14); }
   .chips { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .chips:empty { display: none; }
   .chip {
-    font-size: 12px; color: #cfe8ee; background: rgba(43,212,212,0.10);
-    border: 1px solid rgba(43,212,212,0.4); border-radius: 8px; padding: 3px 9px;
+    font-size: 12px; color: var(--q-text2); background: rgba(var(--q-acc),0.10);
+    border: 1px solid rgba(var(--q-acc),0.4); border-radius: 8px; padding: 3px 9px;
     display: flex; align-items: center; gap: 7px; max-width: 320px;
   }
-  .chip.target { background: rgba(155,140,255,0.12); border-color: rgba(155,140,255,0.55); color: #d7d0ff; }
+  .chip.target { background: rgba(var(--q-vio),0.12); border-color: rgba(var(--q-vio),0.55); color: var(--q-text2); }
   .chip .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .chip .x { cursor: pointer; color: #7fb0c4; }
-  .chip .x:hover { color: #ff6b6b; }
+  .chip .x { cursor: pointer; color: var(--q-dim); }
+  .chip .x:hover { color: var(--q-err); }
 
   /* conversation picker — opens upward, above the box */
   .picker {
     position: absolute; left: 0; right: 0; bottom: calc(100% + 12px);
     box-sizing: border-box; padding: 10px;
-    background: rgba(12, 24, 37, 0.97);
-    border: 1px solid rgba(43, 212, 212, 0.5); border-radius: 14px;
-    box-shadow: 0 0 30px 4px rgba(43,212,212,0.22), 0 0 70px 18px rgba(43,212,212,0.10);
+    background: rgba(var(--q-bg), 0.97);
+    border: 1px solid rgba(var(--q-acc), 0.5); border-radius: 14px;
+    box-shadow: 0 0 30px 4px rgba(var(--q-acc),0.22), 0 0 70px 18px rgba(var(--q-acc),0.10);
   }
   .picker[hidden] { display: none; }
   .picker .psearch {
     width: 100%; box-sizing: border-box; padding: 8px 11px;
-    background: rgba(43,212,212,0.06); border: 1px solid rgba(43,212,212,0.30);
-    border-radius: 9px; color: #e6f2fa; font-size: 14px; font-family: inherit;
-    caret-color: #2bd4d4; outline: none;
+    background: rgba(var(--q-acc),0.06); border: 1px solid rgba(var(--q-acc),0.30);
+    border-radius: 9px; color: var(--q-text); font-size: 14px; font-family: inherit;
+    caret-color: rgb(var(--q-acc)); outline: none;
   }
-  .picker .psearch::placeholder { color: #5f7d92; }
-  .picker .phint { color: #5f7d92; font-size: 11px; padding: 8px 4px 2px; }
+  .picker .psearch::placeholder { color: var(--q-dim); }
+  .picker .phint { color: var(--q-dim); font-size: 11px; padding: 8px 4px 2px; }
   .picker .plist { margin-top: 6px; max-height: 270px; overflow-y: auto; }
   .pi {
     display: flex; align-items: center; gap: 9px;
     padding: 8px 10px; border-radius: 8px; cursor: pointer;
-    color: #cfe8ee; font-size: 14px; white-space: nowrap;
+    color: var(--q-text2); font-size: 14px; white-space: nowrap;
   }
-  .pi:hover, .pi.sel { background: rgba(43,212,212,0.16); color: #e6f2fa; }
-  .pi .glyph-i { flex: 0 0 auto; color: #2bd4d4; width: 14px; text-align: center; }
+  .pi:hover, .pi.sel { background: rgba(var(--q-acc),0.16); color: var(--q-text); }
+  .pi .glyph-i { flex: 0 0 auto; color: rgb(var(--q-acc)); width: 14px; text-align: center; }
   .pi .pt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .pi.new .glyph-i { color: #9b8cff; }
-  .picker .pempty { color: #5f7d92; font-size: 13px; padding: 10px; text-align: center; }
+  .pi.new .glyph-i { color: rgb(var(--q-vio)); }
+  .picker .pempty { color: var(--q-dim); font-size: 13px; padding: 10px; text-align: center; }
   .picker .plist::-webkit-scrollbar { width: 8px; }
-  .picker .plist::-webkit-scrollbar-thumb { background: rgba(43,212,212,0.3); border-radius: 8px; }
+  .picker .plist::-webkit-scrollbar-thumb { background: rgba(var(--q-acc),0.3); border-radius: 8px; }
 </style>
 </head>
 <body>

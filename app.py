@@ -295,6 +295,21 @@ def index():
         return send_from_directory("static", "index.html")
 
 
+@app.route("/quickbox.html")
+def quickbox():
+    # Same pre-paint theme injection as index() so the quick-access overlay
+    # matches the chosen theme even on a wiped localStorage.
+    try:
+        with open(os.path.join(app.static_folder, "quickbox.html")) as f:
+            html = f.read()
+        theme = _load_theme()
+        html = html.replace('||"terminal"', '||' + json.dumps(theme))
+        html = html.replace('<html lang="en">', '<html lang="en" data-theme="%s">' % theme)
+        return Response(html, mimetype="text/html")
+    except Exception:
+        return send_from_directory("static", "quickbox.html")
+
+
 @app.route("/theme", methods=["GET", "POST"])
 def theme():
     global _theme
