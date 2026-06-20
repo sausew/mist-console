@@ -636,11 +636,11 @@ html[data-theme="solarpunk"] #logs::before {
   -webkit-mask-image: radial-gradient(300px 300px at top left, #000 60%, transparent 96%);
           mask-image: radial-gradient(300px 300px at top left, #000 60%, transparent 96%);
 }
-/* right-edge creeper that winds the full height, all the way up to the top */
+/* wide, lush flowering creeper filling the empty right column, full height to the top */
 html[data-theme="solarpunk"] #logs::after {
-  top: 0; right: 0; width: 64px; height: 100%;
-  background-image: url("vine-v.svg"); background-size: 64px auto; background-repeat: repeat-y;
-  background-position: top right; opacity: .6;
+  top: 0; right: 0; width: 230px; height: 100%;
+  background-image: url("vine-lush.svg"); background-size: 230px auto; background-repeat: repeat-y;
+  background-position: top right; opacity: .72;
   -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
           mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
 }
