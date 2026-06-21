@@ -92,8 +92,12 @@ body.col-resizing { cursor: col-resize; user-select: none; }
   user-select: none;   /* so click-drag reordering doesn't select the title text */
 }
 .tab:hover { background: #0f2030; }
-.tab.dragging { opacity: .45; }
-.tab.drag-over { box-shadow: inset 0 2px 0 0 var(--teal); }   /* insertion line above target */
+/* lifted, follows the pointer; the no-transition rule keeps it glued to the cursor
+   while the OTHER pinned tabs slide out of the way (their transition is set inline) */
+.tab.dragging { opacity: .92; z-index: 10; position: relative;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35); cursor: grabbing; }
+body.tab-dragging, body.tab-dragging .tab { cursor: grabbing; }
+.tab.drag-over { box-shadow: inset 0 2px 0 0 var(--teal); }   /* legacy insertion line (unused) */
 .tab.active { background: #102536; color: var(--text); border-left: 2px solid var(--teal); padding-left: 7px; }
 .tab .dot { width: 7px; height: 7px; flex: 0 0 7px; background: var(--dim); border-radius: 0; }
 .tab .dot.idle { background: #3a566e; }
