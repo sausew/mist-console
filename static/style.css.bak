@@ -426,53 +426,45 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ============================================================
-   Solarpunk theme — bright, warm, daylit greenhouse.
-   Art-Nouveau-by-way-of-Ghibli: a warm cream daylight base,
-   green + gold signature, terracotta human, humanist (non-mono)
-   text, rounded organic edges, dappled sunlight, and living
-   botanical vines. The deliberate OPPOSITE of a dark terminal.
+   Solarpunk theme — the opposite of a terminal.
+   Soft greenhouse daylight, living greenery, rounded edges,
+   humanist (non-mono) text, and glowing blue arcane sigils.
    Overrides the variables AND every hardcoded dark surface from
    the Terminal sheet above, so no dark patches leak through.
-   (The previous "solarpunk" theme was really lunarpunk — dark
-   phthalo night + blue neon sigils — and has been fully replaced.)
    ============================================================ */
 html[data-theme="solarpunk"] {
-  --bg:        #F3EEDD;   /* warm cream daylight */
-  --bg-2:      #FBF8EFcc;
-  --line:      #CBD8C2;   /* soft sage hairline */
-  --line-soft: #E3DECB;
-  --text:      #2E2A22;   /* deep bark — warm near-black, never cold */
-  --dim:       #7B7A5C;   /* sage-olive secondary text */
-  --teal:      #2F6B3C;   /* PRIMARY accent = forest green (was cyber-teal) */
-  --violet:    #BE8C12;   /* thinking = warm gold (was amethyst) */
-  --user:      #B5562F;   /* the human = terracotta */
-  --warn:      #C97A1C;   /* amber */
-  --err:       #B5402A;   /* warm brick */
-  --ok:        #2F6B3C;   /* forest green */
-  /* theme-local surfaces — all light/warm, never dark */
-  --surface:   #EFE8D3;   /* bars & panels: wheat */
-  --surface-2: #FFFFFF;   /* fields / raised chips */
-  --code-bg:   #ECE5D0;   /* parchment code blocks */
-  --hover:     #E7DEC4;   /* deeper wheat */
-  --active:    #DCEBCF;   /* pale leaf-green selection */
-  --user-bg:   #F8EBD2;   /* pale terracotta-cream bubble */
-  --leaf:      #5BB247;   /* bright foliage — the "working" pulse */
-  --gold:      #E0B100;   /* sunbeam gold */
-  --amber:     #F4A93B;
-  --focus:     0 0 0 3px rgba(224,177,0,.22);   /* warm gold focus ring (NOT neon) */
-  --radius:    14px;
-  /* humanist + Art-Nouveau-warm, system fonts so no web-font load.
-     Optima/Avenir read as elegant "normal text", not a terminal. */
-  --mono: "Optima", "Avenir Next", "Seravek", system-ui, -apple-system, sans-serif;
-  --head: "Cochin", "Palatino", "Hoefler Text", Georgia, serif;
+  --bg:        #0a1f1a;   /* deep phthalo-green night */
+  --bg-2:      #103029cc;
+  --line:      #2e6253;   /* phthalo hairline */
+  --line-soft: #214a40;
+  --text:      #d9e8df;   /* pale mint white */
+  --dim:       #80a597;   /* muted sage */
+  --teal:      #36a3ff;   /* MIST accent / sigil blue (glows on the dark green) */
+  --violet:    #a596ff;   /* arcane amethyst (thinking) */
+  --user:      #4eb878;   /* lush emerald — the human */
+  --warn:      #e2a838;
+  --err:       #ff7a6b;
+  --ok:        #5ccf7e;
+  /* theme-local surfaces + sigil glow */
+  --surface:   #103029;   /* panels: topbar, rail, composer, side panels */
+  --surface-2: #17413a;   /* input fields / chips — lighter phthalo so they stand out */
+  --code-bg:   #0c2722;   /* code blocks */
+  --hover:     #163a33;
+  --active:    #1d483f;
+  --user-bg:   #123a30;
+  --sigil:     #36a3ff;   /* luminous arcane blue */
+  --glow:      0 0 5px rgba(54,163,255,.9), 0 0 13px rgba(54,163,255,.55);
+  --radius:    12px;
+  /* humanist, organic — reads as "normal text", not a terminal */
+  --mono: "Seravek", "Avenir Next", "Optima", "Gill Sans", system-ui, -apple-system, sans-serif;
 }
-/* dappled sunlight: warm gold + leaf-green + soft sky washes over cream */
+/* bioluminescent dapples glowing through the deep phthalo dark */
 html[data-theme="solarpunk"] body {
   font-size: 14px; line-height: 1.62;
   background:
-    radial-gradient(1100px 620px at 86% -12%, rgba(224,177,0,.20), transparent 60%),
-    radial-gradient(840px 540px at -8% 8%, rgba(91,178,71,.16), transparent 58%),
-    radial-gradient(980px 680px at 50% 122%, rgba(135,206,235,.14), transparent 62%),
+    radial-gradient(1000px 580px at 84% -10%, rgba(56,178,138,.20), transparent 60%),
+    radial-gradient(820px 520px at -10% 8%, rgba(54,163,255,.14), transparent 58%),
+    radial-gradient(900px 620px at 50% 118%, rgba(46,150,112,.20), transparent 62%),
     var(--bg);
   background-attachment: fixed;
 }
@@ -483,18 +475,8 @@ html[data-theme="solarpunk"] .tool pre,
 html[data-theme="solarpunk"] .body .copy-btn {
   font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 }
-/* Art-Nouveau serif for display type: logo, headings, panel titles */
-html[data-theme="solarpunk"] .logo,
-html[data-theme="solarpunk"] .body h1,
-html[data-theme="solarpunk"] .body h2,
-html[data-theme="solarpunk"] .body h3,
-html[data-theme="solarpunk"] .capHead,
-html[data-theme="solarpunk"] .greet {
-  font-family: var(--head); letter-spacing: .2px;
-}
-html[data-theme="solarpunk"] .logo { letter-spacing: 3px; }
 
-/* --- panels & bars get the wheat surface --- */
+/* --- panels & bars get the light surface --- */
 html[data-theme="solarpunk"] #topbar,
 html[data-theme="solarpunk"] #tabrail,
 html[data-theme="solarpunk"] #capPanel,
@@ -506,7 +488,7 @@ html[data-theme="solarpunk"] #modelCard,
 html[data-theme="solarpunk"] #permCard,
 html[data-theme="solarpunk"] #railToggle { background: var(--surface); }
 
-/* --- fields / small controls: clean white --- */
+/* --- fields / small controls --- */
 html[data-theme="solarpunk"] #input,
 html[data-theme="solarpunk"] #notesInput,
 html[data-theme="solarpunk"] .rt-field input,
@@ -519,14 +501,14 @@ html[data-theme="solarpunk"] .scratch-edit,
 html[data-theme="solarpunk"] .tab .trename,
 html[data-theme="solarpunk"] .body .copy-btn { background: var(--surface-2); }
 
-/* --- code / parchment surfaces (light, not dark) --- */
+/* --- code / parchment surfaces --- */
 html[data-theme="solarpunk"] .body pre,
 html[data-theme="solarpunk"] .body code,
 html[data-theme="solarpunk"] .body .md-table th,
 html[data-theme="solarpunk"] .body .md-table code {
   background: var(--code-bg); color: var(--text);
 }
-html[data-theme="solarpunk"] .body .md-table tbody tr:nth-child(even) td { background: #EEF3DF; }
+html[data-theme="solarpunk"] .body .md-table tbody tr:nth-child(even) td { background: #eef5e2; }
 
 /* --- hover / active fills (were dark blues) --- */
 html[data-theme="solarpunk"] details.tool > summary.tool-head,
@@ -534,32 +516,30 @@ html[data-theme="solarpunk"] .tab:hover { background: var(--hover); }
 html[data-theme="solarpunk"] .tab.active,
 html[data-theme="solarpunk"] .modelrow:hover,
 html[data-theme="solarpunk"] .slash-item.sel { background: var(--active); }
-html[data-theme="solarpunk"] #jumpBtn { background: var(--active); color: var(--teal); }
-html[data-theme="solarpunk"] #jumpBtn:hover { background: #C7DFAC; }
-html[data-theme="solarpunk"] .tab.pinned { background: #E6EFD7; }
-html[data-theme="solarpunk"] .tab.pinned:hover { background: #DCEBCF; }
-html[data-theme="solarpunk"] .tab.pinned.active { background: #D2E6C2; }
-html[data-theme="solarpunk"] .tab .dot.idle { background: #B6BE96; }
-html[data-theme="solarpunk"] .tab .dot.working,
-html[data-theme="solarpunk"] .spinner .sv-glyph { background: var(--leaf); color: var(--leaf); }
+html[data-theme="solarpunk"] #jumpBtn { background: var(--active); }
+html[data-theme="solarpunk"] #jumpBtn:hover { background: #c7dfac; }
+html[data-theme="solarpunk"] .tab.pinned { background: #184a3e; }
+html[data-theme="solarpunk"] .tab.pinned:hover { background: #1f5648; }
+html[data-theme="solarpunk"] .tab.pinned.active { background: #245d4d; }
+html[data-theme="solarpunk"] .tab .dot.idle { background: #9aae84; }
 
-/* --- user message bubble: warm cream, terracotta edge, bark text --- */
+/* --- user message bubble: leaf cream, dark text, mossy edge --- */
 html[data-theme="solarpunk"] .msg.user .body {
   color: var(--text); background: var(--user-bg);
-  border: 1px solid #E6CBA8; border-left: 3px solid var(--user);
+  border: 1px solid var(--line); border-left: 3px solid var(--user);
 }
 
-/* --- secondary text that was cool light-gray → dark sage so it reads on cream --- */
+/* --- muted secondary text that was cool-gray --- */
 html[data-theme="solarpunk"] .think .think-body,
 html[data-theme="solarpunk"] .tool .tsummary,
 html[data-theme="solarpunk"] .tool .tool-result,
-html[data-theme="solarpunk"] .tool pre,
 html[data-theme="solarpunk"] .chips span,
 html[data-theme="solarpunk"] .routines-note code,
 html[data-theme="solarpunk"] .badge.usage,
-html[data-theme="solarpunk"] .badge.repo { color: #5E6B4B; }
+html[data-theme="solarpunk"] .badge.repo { color: #9ec1b1; }
+html[data-theme="solarpunk"] .tool pre { color: var(--text); }
 
-/* --- soft organic edges everywhere (the opposite of sharp) --- */
+/* --- soft edges everywhere (the opposite of sharp) --- */
 html[data-theme="solarpunk"] .badge { border-radius: 999px; padding: 2px 10px; }
 html[data-theme="solarpunk"] button,
 html[data-theme="solarpunk"] #input,
@@ -587,34 +567,45 @@ html[data-theme="solarpunk"] details.tool > summary.tool-head { border-radius: 1
 html[data-theme="solarpunk"] details.tool[open] > summary.tool-head { border-radius: 10px 10px 0 0; }
 html[data-theme="solarpunk"] .body pre,
 html[data-theme="solarpunk"] .body code { border-radius: 8px; }
-/* gentle warm depth instead of hard hairlines */
+/* gentle depth instead of hard hairlines */
 html[data-theme="solarpunk"] .tool,
 html[data-theme="solarpunk"] .msg.user .body,
 html[data-theme="solarpunk"] #modelCard,
 html[data-theme="solarpunk"] #permCard,
-html[data-theme="solarpunk"] .scratch-item { box-shadow: 0 1px 4px rgba(74,60,30,.10); }
+html[data-theme="solarpunk"] .scratch-item { box-shadow: 0 1px 4px rgba(0,0,0,.10); }
 html[data-theme="solarpunk"] #capPanel,
 html[data-theme="solarpunk"] #routinesPanel,
-html[data-theme="solarpunk"] #notesPanel { box-shadow: -2px 0 16px rgba(74,60,30,.10); }
+html[data-theme="solarpunk"] #notesPanel { box-shadow: -2px 0 14px rgba(0,0,0,.10); }
 
-/* --- accents: forest green + warm gold, NO neon glow --- */
-html[data-theme="solarpunk"] .msg.mist .who { color: var(--teal); }
-html[data-theme="solarpunk"] .cursor { background: var(--leaf); border-radius: 2px; }
-html[data-theme="solarpunk"] .body a { color: var(--teal); text-decoration: none; border-bottom: 1px solid rgba(47,107,60,.35); }
-html[data-theme="solarpunk"] .body a:hover { color: #245431; border-bottom-color: var(--gold); }
-/* warm gold "sunlight" focus ring + send glow */
+/* --- glowing blue arcane sigils --- */
+html[data-theme="solarpunk"] .logo,
+html[data-theme="solarpunk"] .spinner .sv-glyph,
+html[data-theme="solarpunk"] details.tool > summary.tool-head::before,
+html[data-theme="solarpunk"] details.tool[open] > summary.tool-head::before,
+html[data-theme="solarpunk"] .routine > summary::before,
+html[data-theme="solarpunk"] .routine[open] > summary::before,
+html[data-theme="solarpunk"] .capBody h4::before,
+html[data-theme="solarpunk"] .modelrow.sel::before {
+  color: var(--sigil); text-shadow: var(--glow);
+}
+html[data-theme="solarpunk"] .msg.mist .who { color: var(--sigil); text-shadow: 0 0 6px rgba(58,155,255,.35); }
+html[data-theme="solarpunk"] .greet { color: var(--sigil); text-shadow: var(--glow); }
+html[data-theme="solarpunk"] .cursor { background: var(--sigil); box-shadow: 0 0 7px rgba(58,155,255,.85); border-radius: 2px; }
+html[data-theme="solarpunk"] .body a { color: var(--sigil); text-decoration: none; }
+html[data-theme="solarpunk"] .body a:hover { text-shadow: var(--glow); }
+/* casting glow on focus + send */
 html[data-theme="solarpunk"] #input:focus,
 html[data-theme="solarpunk"] #notesInput:focus,
 html[data-theme="solarpunk"] .rt-field input:focus,
 html[data-theme="solarpunk"] .rt-field textarea:focus {
-  border-color: var(--gold); box-shadow: var(--focus);
+  border-color: var(--sigil); box-shadow: 0 0 0 3px rgba(58,155,255,.16);
 }
-html[data-theme="solarpunk"] #sendBtn:not(:disabled):hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(224,177,0,.30); }
-html[data-theme="solarpunk"] .tab.active { box-shadow: inset 2px 0 0 0 var(--teal); }
+html[data-theme="solarpunk"] #sendBtn:not(:disabled):hover { border-color: var(--sigil); box-shadow: 0 0 10px rgba(58,155,255,.30); }
+html[data-theme="solarpunk"] .tab.active { box-shadow: inset 2px 0 0 0 var(--sigil); }
 
-/* selection + scrollbar: warm gold + sage */
-html[data-theme="solarpunk"] ::selection { background: rgba(224,177,0,.26); color: var(--text); }
-html[data-theme="solarpunk"] ::-webkit-scrollbar-thumb { background: #B6C795; border-radius: 999px; }
+/* selection + scrollbar tuned to the theme */
+html[data-theme="solarpunk"] ::selection { background: rgba(47,155,255,.22); color: var(--text); }
+html[data-theme="solarpunk"] ::-webkit-scrollbar-thumb { background: #8fae64; border-radius: 999px; }
 
 /* --- living vines creeping along the margins & borders --- */
 /* anchor the pseudo-elements, and lift real content above the decoration */
@@ -641,7 +632,7 @@ html[data-theme="solarpunk"] #topbar::after {
 html[data-theme="solarpunk"] #logs::before {
   top: 0; left: 0; width: 224px; height: 224px;
   background-image: url("vine-corner.svg"); background-size: contain; background-position: top left;
-  opacity: .9;
+  opacity: .85;
   -webkit-mask-image: radial-gradient(300px 300px at top left, #000 60%, transparent 96%);
           mask-image: radial-gradient(300px 300px at top left, #000 60%, transparent 96%);
 }
@@ -649,7 +640,7 @@ html[data-theme="solarpunk"] #logs::before {
 html[data-theme="solarpunk"] #logs::after {
   top: 0; right: 0; width: 230px; height: 100%;
   background-image: url("vine-lush.svg"); background-size: 230px auto; background-repeat: repeat-y;
-  background-position: top right; opacity: .58;
+  background-position: top right; opacity: .72;
   -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
           mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
 }
@@ -657,7 +648,7 @@ html[data-theme="solarpunk"] #logs::after {
 html[data-theme="solarpunk"] #tabrail::after {
   top: 0; right: 0; width: 60px; height: 100%;
   background-image: url("vine-v.svg"); background-size: 60px auto; background-repeat: repeat-y;
-  background-position: top right; opacity: .5;
+  background-position: top right; opacity: .55;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 64px, #000 calc(100% - 48px), transparent 100%);
           mask-image: linear-gradient(to bottom, transparent 0, #000 64px, #000 calc(100% - 48px), transparent 100%);
 }
@@ -665,7 +656,7 @@ html[data-theme="solarpunk"] #tabrail::after {
 html[data-theme="solarpunk"] #composer::before {
   top: 0; left: 0; right: 0; height: 26px;
   background-image: url("vine-h.svg"); background-size: auto 26px; background-repeat: repeat-x;
-  background-position: left top; opacity: .55;
+  background-position: left top; opacity: .5;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
           mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
 }
@@ -673,55 +664,56 @@ html[data-theme="solarpunk"] #composer::before {
 html[data-theme="solarpunk"] #topbar::after {
   bottom: 0; left: 0; right: 0; height: 22px;
   background-image: url("vine-h.svg"); background-size: auto 22px; background-repeat: repeat-x;
-  background-position: left bottom; transform: scaleY(-1); opacity: .5;
+  background-position: left bottom; transform: scaleY(-1); opacity: .42;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
           mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
 }
 
-/* --- top-bar chips/buttons + sidebar tabs read as raised cards --- */
+/* --- make top-bar chips/buttons + sidebar tabs read as raised cards --- */
 html[data-theme="solarpunk"] .badge {
-  background: var(--surface-2); box-shadow: 0 1px 2px rgba(74,60,30,.10);
+  background: var(--surface-2); box-shadow: 0 1px 2px rgba(0,0,0,.14);
 }
 html[data-theme="solarpunk"] .actions button,
 html[data-theme="solarpunk"] #newTab,
 html[data-theme="solarpunk"] #scratchBtn,
 html[data-theme="solarpunk"] #fileBtn,
 html[data-theme="solarpunk"] #sendBtn {
-  background: var(--surface-2); border-color: #B6C795;
-  box-shadow: 0 1px 2px rgba(74,60,30,.10);
+  background: var(--surface-2); border-color: #3c8f5e;
+  box-shadow: 0 1px 2px rgba(0,0,0,.18);
 }
 html[data-theme="solarpunk"] .actions button:hover,
 html[data-theme="solarpunk"] #newTab:hover,
 html[data-theme="solarpunk"] #scratchBtn:hover,
 html[data-theme="solarpunk"] #fileBtn:hover,
 html[data-theme="solarpunk"] #sendBtn:not(:disabled):hover {
-  border-color: var(--gold); color: var(--teal);
-  box-shadow: 0 0 10px rgba(224,177,0,.30);
+  border-color: var(--sigil); color: var(--sigil);
+  box-shadow: 0 0 10px rgba(47,155,255,.32);
 }
 /* each tab is a distinct rounded chip with its own ground */
 html[data-theme="solarpunk"] .tab {
   margin: 4px 8px; padding: 7px 10px; border-radius: 10px;
   border: 1px solid var(--line); background: var(--surface-2);
-  box-shadow: 0 1px 2px rgba(74,60,30,.08);
-  color: #4A4636;   /* bark-on-cream, easy to read on the light chip */
+  box-shadow: 0 1px 2px rgba(0,0,0,.11);
+  color: #d3e6da;   /* brighter than --dim so titles are easy to read on the dark chip */
 }
-html[data-theme="solarpunk"] .tab .ttitle { color: #4A4636; }
+html[data-theme="solarpunk"] .tab .ttitle { color: #d3e6da; }
 html[data-theme="solarpunk"] .tab.active .ttitle,
-html[data-theme="solarpunk"] .tab.pinned .ttitle { color: var(--text); }
-html[data-theme="solarpunk"] .tab:hover { background: var(--hover); border-color: #B6C795; }
+html[data-theme="solarpunk"] .tab.pinned .ttitle { color: #eef6ef; }
+html[data-theme="solarpunk"] .tab:hover { background: var(--hover); border-color: #3c8f5e; }
 html[data-theme="solarpunk"] .tab.active {
   background: var(--active); color: var(--text);
-  border: 1px solid var(--teal); padding-left: 10px;
-  box-shadow: 0 0 0 1px rgba(47,107,60,.30), 0 1px 4px rgba(74,60,30,.12);
+  border: 1px solid var(--sigil); padding-left: 10px;
+  box-shadow: 0 0 0 1px rgba(47,155,255,.45), 0 1px 4px rgba(0,0,0,.18);
 }
-html[data-theme="solarpunk"] .tab.pinned { border-left: 3px solid var(--gold); }
-html[data-theme="solarpunk"] .tab.pinned.active { border: 1px solid var(--teal); border-left: 3px solid var(--gold); }
-/* pin: outlined chip so it's clearly a button against the light tab */
+html[data-theme="solarpunk"] .tab.pinned { border-left: 3px solid var(--user); }
+html[data-theme="solarpunk"] .tab.pinned.active { border: 1px solid var(--sigil); border-left: 3px solid var(--user); }
+/* pin: outlined chip so it's clearly a button against the dark tab */
 html[data-theme="solarpunk"] .tab .tpin {
   color: var(--dim); border: 1px solid var(--line); border-radius: 6px;
   padding: 0 4px; line-height: 16px; background: var(--surface);
 }
-html[data-theme="solarpunk"] .tab:hover .tpin { border-color: var(--gold); color: var(--teal); }
+html[data-theme="solarpunk"] .tab:hover .tpin { border-color: var(--sigil); color: var(--sigil); }
 html[data-theme="solarpunk"] .tab .tpin.on {
-  color: var(--gold); border-color: var(--gold);
+  color: var(--sigil); border-color: var(--sigil);
+  box-shadow: 0 0 6px rgba(54,163,255,.35);
 }

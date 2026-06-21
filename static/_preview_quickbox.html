@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="solarpunk">
 <head>
 <meta charset="utf-8">
 <title>MIST</title>
 <!-- match the app's chosen theme (shared localStorage; server also injects it). -->
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}</script>
+<script>document.documentElement.dataset.theme="solarpunk";</script>
 <style>
   :root {
     --q-acc: 43,212,212;     /* accent / glow rgb */
@@ -28,7 +28,7 @@
     --q-font: "Optima", "Avenir Next", "Seravek", system-ui, sans-serif;
   }
   html, body {
-    margin: 0; height: 100%; background: transparent; overflow: hidden;
+    margin: 0; height: 100%; background: linear-gradient(135deg,#5b6b7a,#33402f); overflow: hidden;
     font-family: var(--q-font);
   }
   /* box is bottom-anchored so the picker can open upward without shifting the

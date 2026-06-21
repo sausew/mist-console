@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="solarpunk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIST Console</title>
+<!-- Apply the saved theme before CSS paints so switching never flashes. -->
+<script>document.documentElement.dataset.theme="solarpunk";</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="topbar">
+  <div class="brand">
+    <img id="logoImg" class="logo-img" src="mist-logo.png" alt="MIST"
+         onerror="this.style.display='none';document.getElementById('logoText').style.display='inline'">
+    <span class="logo" id="logoText" style="display:none">M I S T</span>
+    <span class="sub">MIST</span>
+  </div>
+  <div class="meta">
+    <span class="badge repo clickable" id="repo" data-state="unknown" title="Repo MIST works in · click to change">repo —</span>
+    <span class="badge clickable" id="model" title="Model in use · click to switch">model —</span>
+    <span class="badge clickable" id="perm" title="Permission mode · click to switch">perm —</span>
+    <span class="badge" id="status" data-state="idle">idle</span>
+    <span class="badge usage" id="ctx" title="Context window used">ctx —</span>
+    <span class="badge usage" id="r5h" title="5-hour limit used">5h —</span>
+    <span class="badge usage" id="r7d" title="7-day limit used">7d —</span>
+  </div>
+  <div class="actions">
+    <button id="modelBtn" title="Switch model">model</button>
+    <button id="notesBtn" title="Notes · a persistent scratchpad saved to disk">notes</button>
+    <button id="routinesBtn" title="Routines · scheduled agents from Claude Code">routines</button>
+    <button id="settingsBtn" title="Settings · active MCP servers + tools">settings</button>
+  </div>
+</header>
+
+<aside id="modelCard" hidden>
+  <div class="capHead">model <button id="modelClose">×</button></div>
+  <div id="modelList"></div>
+  <div class="modelnote">Applies to the active chat on your next message; new chats inherit it.</div>
+</aside>
+
+<aside id="permCard" hidden>
+  <div class="capHead">permission mode <button id="permClose">×</button></div>
+  <div id="permList"></div>
+  <div class="modelnote">Controls how freely MIST acts. Applies to the active chat on your next message.</div>
+</aside>
+
+<div id="mid">
+  <nav id="tabrail">
+    <div id="tabs"></div>
+    <button id="newTab">+ new chat</button>
+  </nav>
+  <div id="railResize" title="Drag to resize · double-click to reset"></div>
+  <main id="logs">
+    <button id="railToggle" title="Hide the chat list" aria-label="Toggle chat list">‹</button>
+    <button id="jumpBtn" hidden title="Jump to the latest message">↓ jump to present</button>
+  </main>
+</div>
+
+<aside id="routinesPanel" hidden>
+  <div class="capHead">routines <span class="count" id="nRoutines"></span><button id="routinesClose">×</button></div>
+  <div class="capBody" id="routinesBody"></div>
+  <div class="routines-foot">
+    <button id="routineNew" class="rt-new">+ new routine</button>
+    <div class="routines-note">Edits write <code>~/.claude/scheduled-tasks</code> (shared with the Claude desktop app). Enabling a schedule runs the routine from the Console via launchd. If the same routine is also scheduled in the desktop app, it will run twice — disable it there.</div>
+  </div>
+</aside>
+
+<aside id="capPanel" hidden>
+  <div class="capHead">settings <button id="capClose">×</button></div>
+  <div class="capBody">
+    <h4>theme</h4><div id="themeList"></div>
+    <h4>quick access</h4>
+    <div class="qa">
+      <div class="qa-row">
+        <label class="qa-toggle"><input type="checkbox" id="qaEnabled"> enabled</label>
+        <span class="qa-gesture">double-tap ⌥ Option</span>
+      </div>
+      <div class="qa-row" id="qaPermRow" hidden>
+        <span class="qa-warn" id="qaPermStatus">needs Accessibility permission</span>
+        <button id="qaGrant" class="qa-rec">Grant</button>
+      </div>
+      <div class="qa-note">Double-tap the Option (⌥) key to summon MIST from anywhere — even when she's closed (a tiny always-on background agent launches her). Needs macOS Accessibility permission for the agent (System Settings → Privacy & Security → Accessibility).</div>
+    </div>
+    <h4>active mcp servers <span class="count" id="nMcp"></span></h4><div id="capMcp" class="chips"></div>
+    <h4>tools <span class="count" id="nTools"></span></h4><div id="capTools" class="chips"></div>
+    <h4>skills <span class="count" id="nSkills"></span></h4><div id="capSkills" class="chips"></div>
+    <h4>slash commands <span class="count" id="nSlash"></span></h4><div id="capSlash" class="chips"></div>
+  </div>
+</aside>
+
+<aside id="notesPanel" hidden>
+  <div class="capHead">notes <span class="count" id="nNotes"></span><button id="notesClose">×</button></div>
+  <div class="notes-hint">A persistent scratchpad, saved to disk. Notes stay here until you send or delete them. They survive a restart, closing the app, a force-quit, or an update.</div>
+  <div class="capBody" id="notesList"></div>
+  <div class="notes-foot">
+    <textarea id="notesInput" rows="1" placeholder="Jot something down…  (Enter to save · Shift+Enter for newline)"></textarea>
+    <button id="notesAdd">add</button>
+  </div>
+</aside>
+
+<footer id="composer">
+  <div id="slashMenu" hidden></div>
+  <button id="scratchBtn" title="Notes · a persistent scratchpad saved to disk">note</button>
+  <button id="fileBtn" title="Attach a file (inserts its path)">file</button>
+  <textarea id="input" rows="1" placeholder="Talk to MIST…  (Enter to send · Shift+Enter for newline)"></textarea>
+  <button id="sendBtn">send</button>
+  <input type="file" id="hiddenFile" multiple hidden>
+</footer>
+
+<div id="usage"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
