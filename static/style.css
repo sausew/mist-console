@@ -104,9 +104,14 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 .tab .trename { flex: 1; min-width: 0; background: #0b1722; border: 1px solid var(--teal);
   color: var(--text); font-family: var(--mono); font-size: 12px; padding: 1px 4px; }
 .tab .trename:focus { outline: none; }
-.tab .tpin { color: #2f4a60; padding: 0 2px; font-size: 11px; opacity: 0; }
+.tab .tpin { color: #2f4a60; padding: 0 3px; opacity: 0;
+  display: inline-flex; align-items: center; justify-content: center; }
 .tab:hover .tpin { opacity: 1; }
 .tab .tpin.on { color: var(--teal); opacity: 1; }
+/* literal pushpin icon (inline SVG, tinted by currentColor) — all themes */
+.pin-ico { width: 11px; height: 11px; display: block; fill: currentColor; }
+.tabsection .pin-ico { display: inline-block; width: 10px; height: 10px;
+  vertical-align: -1px; margin-right: 4px; }
 .tab .tclose { color: var(--dim); padding: 0 2px; opacity: 0; }
 .tab:hover .tclose { opacity: 1; }
 .tab .tclose:hover { color: var(--err); }
@@ -646,13 +651,18 @@ html[data-theme="solarpunk"] #logs::before {
   background-image: url("an-corner.svg"); background-size: contain; background-position: top left;
   transform: scaleY(-1); transform-origin: top left; opacity: .5;
 }
-/* faint William Morris "Venetian" wallpaper down the empty right column */
+/* faint William Morris "Venetian" wallpaper filling the empty space to the RIGHT
+   of the conversation. It covers the whole log area and tiles seamlessly; a
+   horizontal mask keeps it clear of the text column (~900px wide) and fades it in
+   toward the right edge — so it fills whatever empty width the window has at any
+   size and never ends on a hard vertical edge. */
 html[data-theme="solarpunk"] #logs::after {
-  top: 0; right: 0; width: 208px; height: 100%;
-  background-image: url("morris-venetian.svg"); background-size: 208px auto; background-repeat: repeat-y;
-  background-position: top right; opacity: .12;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
+  top: 0; right: 0; bottom: 0; left: 0; width: auto; height: auto;
+  background-image: url("morris-venetian.svg");
+  background-repeat: repeat; background-size: 190px auto; background-position: top right;
+  opacity: .14;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, transparent 900px, #000 1010px, #000 100%);
+          mask-image: linear-gradient(to right, transparent 0, transparent 900px, #000 1010px, #000 100%);
 }
 /* slender Art Nouveau tulip column running down the rail / chat seam —
    fade both ends so it never looks chopped */
@@ -723,3 +733,5 @@ html[data-theme="solarpunk"] .tab:hover .tpin { border-color: var(--gold); color
 html[data-theme="solarpunk"] .tab .tpin.on {
   color: var(--gold); border-color: var(--gold);
 }
+/* the "pinned" section-header pin is gold too (matches the pinned-tab pin) */
+html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }

@@ -111,6 +111,7 @@
   }
   .pi:hover, .pi.sel { background: rgba(var(--q-acc),0.16); color: var(--q-text); }
   .pi .glyph-i { flex: 0 0 auto; color: rgb(var(--q-acc)); width: 14px; text-align: center; }
+  .pi .glyph-i svg { width: 13px; height: 13px; fill: currentColor; vertical-align: -2px; }
   .pi .pt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .pi.new .glyph-i { color: rgb(var(--q-vio)); }
   .picker .pempty { color: var(--q-dim); font-size: 13px; padding: 10px; text-align: center; }
@@ -246,7 +247,9 @@
       const row = document.createElement("div");
       row.className = "pi" + (s._new ? " new" : "") + (i === pickIdx ? " sel" : "");
       const g = document.createElement("span"); g.className = "glyph-i";
-      g.textContent = s._new ? "＋" : (s.pinned ? "◆" : "▸");
+      if (s._new) g.textContent = "＋";
+      else if (s.pinned) g.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>';
+      else g.textContent = "▸";
       const t = document.createElement("span"); t.className = "pt"; t.textContent = s.title || "New chat";
       row.appendChild(g); row.appendChild(t);
       row.addEventListener("mousedown", (e) => { e.preventDefault(); choosePick(i); });
