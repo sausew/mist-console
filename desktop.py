@@ -69,25 +69,50 @@ def _set_dock_icon():
         print("dock icon set skipped:", e, flush=True)
 
 
-def _fit_main_window():
-    """Keep the main window inside the screen's visible frame (below the menu bar,
-    above the Dock). pywebview centers against the full screen, so a tall window can
-    end up with its title bar tucked under the macOS menu bar. Clamp only when the
-    window is actually out of bounds, so a window the user moved stays put. Returns
-    True once it found the window. Main thread only."""
+def _main_nswindow():
+    """The main console's native NSWindow. pywebview stashes it on the Window object
+    as `.native`, which is far more reliable than matching by title — a WKWebView
+    window can report an empty or page-derived title, so the old title scan silently
+    found nothing and _fit_main_window became a no-op (the menu bar then kept eating
+    the title bar). Fall back to a title/role scan only if `.native` isn't up yet."""
     try:
-        from AppKit import NSApp, NSScreen
-        from Foundation import NSMakeRect
-        win = None
+        if _main_window is not None and getattr(_main_window, "native", None) is not None:
+            return _main_window.native
+    except Exception:
+        pass
+    try:
+        from AppKit import NSApp
         for w in (NSApp().windows() or []):
             try:
                 if w.title() == "MIST Console":
-                    win = w
-                    break
+                    return w
             except Exception:
                 pass
+    except Exception:
+        pass
+    return None
+
+
+def _fit_main_window():
+    """Keep the main window inside the screen's visible frame (below the menu bar,
+    above the Dock) so its title bar / traffic-light controls are never tucked under
+    the macOS menu bar. Clamp only when the window is actually out of bounds, so a
+    window the user placed stays put. Returns True once it found the window. Main
+    thread only."""
+    try:
+        from AppKit import NSScreen
+        from Foundation import NSMakeRect
+        win = _main_nswindow()
         if win is None:
             return False
+        # In native fullscreen the frame legitimately fills the screen (no menu bar);
+        # clamping to visibleFrame there would wrongly shrink the window. Leave it be.
+        try:
+            from AppKit import NSWindowStyleMaskFullScreen
+            if win.styleMask() & NSWindowStyleMaskFullScreen:
+                return True
+        except Exception:
+            pass
         scr = win.screen() or NSScreen.mainScreen()
         vf = scr.visibleFrame()           # bottom-left origin; excludes menu bar + Dock
         f = win.frame()
@@ -111,6 +136,42 @@ def _fit_main_window():
     except Exception as e:
         print("fit window skipped:", e, flush=True)
         return False
+
+
+_win_guard_token = None   # retained NSNotificationCenter observer (else it's freed)
+
+
+def _install_window_guard():
+    """Re-clamp the main window whenever it moves or resizes, so it can never come to
+    rest with its title bar (the X / minimize / fullscreen controls) tucked under the
+    macOS menu bar — e.g. after a maximize, a window-manager nudge, or dragging it up
+    by its background. _fit_main_window only acts when the window is actually out of
+    bounds, so a normal drag does nothing until the title bar hits the menu bar, then
+    it pins to just below it. setFrame triggers another move notification, but by then
+    we're in bounds so it's a no-op — no feedback loop. Main thread only; idempotent."""
+    global _win_guard_token
+    if _win_guard_token is not None:
+        return
+    win = _main_nswindow()
+    if win is None:
+        return
+    try:
+        from Foundation import NSNotificationCenter
+        nc = NSNotificationCenter.defaultCenter()
+
+        def _on_change(note):
+            _fit_main_window()
+
+        # One observer per relevant notification, all scoped to our window.
+        toks = []
+        for name in ("NSWindowDidMoveNotification",
+                     "NSWindowDidResizeNotification",
+                     "NSWindowDidExitFullScreenNotification"):
+            toks.append(nc.addObserverForName_object_queue_usingBlock_(
+                name, win, None, _on_change))
+        _win_guard_token = toks
+    except Exception as e:
+        print("window guard skipped:", e, flush=True)
 
 
 def _set_activation_policy(accessory):
@@ -519,7 +580,10 @@ def _setup():
     # The pywebview NSWindow may not exist the instant _setup runs; retry briefly,
     # then clamp it inside the visible frame so its top isn't hidden by the menu bar.
     def _try_fit(n=0):
-        if _fit_main_window() or n > 20:
+        if _fit_main_window():
+            _install_window_guard()   # keep it clamped on every later move/resize
+            return
+        if n > 20:
             return
         try:
             from PyObjCTools import AppHelper
