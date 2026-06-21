@@ -53,6 +53,66 @@ def _activate():
         pass
 
 
+def _set_dock_icon():
+    """The .app launcher execs `uv run`, so the GUI actually lives in a python
+    process uv spawns — not the bundle's own process. macOS therefore gives the
+    Dock tile a generic Python icon (or none), so MIST never looks "open" as
+    herself. Set the running app's Dock icon explicitly. Main thread only."""
+    try:
+        from AppKit import NSApplication, NSImage
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "static", "mist-logo.png")
+        img = NSImage.alloc().initWithContentsOfFile_(path)
+        if img is not None:
+            NSApplication.sharedApplication().setApplicationIconImage_(img)
+    except Exception as e:
+        print("dock icon set skipped:", e, flush=True)
+
+
+def _fit_main_window():
+    """Keep the main window inside the screen's visible frame (below the menu bar,
+    above the Dock). pywebview centers against the full screen, so a tall window can
+    end up with its title bar tucked under the macOS menu bar. Clamp only when the
+    window is actually out of bounds, so a window the user moved stays put. Returns
+    True once it found the window. Main thread only."""
+    try:
+        from AppKit import NSApp, NSScreen
+        from Foundation import NSMakeRect
+        win = None
+        for w in (NSApp().windows() or []):
+            try:
+                if w.title() == "MIST Console":
+                    win = w
+                    break
+            except Exception:
+                pass
+        if win is None:
+            return False
+        scr = win.screen() or NSScreen.mainScreen()
+        vf = scr.visibleFrame()           # bottom-left origin; excludes menu bar + Dock
+        f = win.frame()
+        w_ = min(f.size.width,  vf.size.width)
+        h_ = min(f.size.height, vf.size.height)
+        x, y = f.origin.x, f.origin.y
+        if x < vf.origin.x:
+            x = vf.origin.x
+        if x + w_ > vf.origin.x + vf.size.width:
+            x = vf.origin.x + vf.size.width - w_
+        # the title bar must not cross above the visible-frame top (the menu bar)
+        vf_top = vf.origin.y + vf.size.height
+        if y + h_ > vf_top:
+            y = vf_top - h_
+        if y < vf.origin.y:
+            y = vf.origin.y
+        if (abs(w_ - f.size.width) > 1 or abs(h_ - f.size.height) > 1
+                or abs(x - f.origin.x) > 1 or abs(y - f.origin.y) > 1):
+            win.setFrame_display_(NSMakeRect(x, y, w_, h_), True)
+        return True
+    except Exception as e:
+        print("fit window skipped:", e, flush=True)
+        return False
+
+
 def _set_activation_policy(accessory):
     """Accessory (LSUIElement) lets the overlay panel take key focus and float
     OVER another app's fullscreen Space without switching Spaces — a Regular app
@@ -302,6 +362,8 @@ def _surface():
             _main_window.show()
         except Exception:
             pass
+        _set_dock_icon()      # we just flipped to Regular — (re)assert MIST's icon
+        _fit_main_window()    # keep the surfaced window clear of the menu bar
 
     try:
         from PyObjCTools import AppHelper
@@ -412,6 +474,18 @@ def _setup():
     # Baseline policy: Accessory when launched quietly as the overlay (so it floats
     # over fullscreen); Regular when the console was opened directly to chat.
     _set_activation_policy(_quiet_launch)
+    _set_dock_icon()   # show MIST's own icon in the Dock (not a generic Python tile)
+    # The pywebview NSWindow may not exist the instant _setup runs; retry briefly,
+    # then clamp it inside the visible frame so its top isn't hidden by the menu bar.
+    def _try_fit(n=0):
+        if _fit_main_window() or n > 20:
+            return
+        try:
+            from PyObjCTools import AppHelper
+            AppHelper.callLater(0.15, lambda: _try_fit(n + 1))
+        except Exception:
+            pass
+    _try_fit()
     # The double-tap-Option hotkey is owned by the always-on mist-hotkey-agent (so
     # it works even when MIST is closed). Expose a main-thread summon hook that the
     # agent calls via POST /show-quick.
