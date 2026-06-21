@@ -253,7 +253,7 @@ def _build_panel():
                     elif action == "collapse":
                         _set_panel_height(QH)
                     else:
-                        _hide_panel()
+                        _dismiss_panel()
                 except Exception as e:
                     print("quick-access: handler error:", e, flush=True)
         _handler_class = _MistHandler
@@ -342,6 +342,47 @@ def _hide_panel():
             _panel.orderOut_(None)
     except Exception:
         pass
+
+
+def _console_visible():
+    """True if the main console window is live and actually on screen. After a quiet
+    (overlay-only) launch the window exists but is hidden, so we check AppKit's
+    isVisible rather than just whether the window object exists."""
+    if _main_window is None or _window_closed:
+        return False
+    try:
+        from AppKit import NSApp
+        for w in (NSApp().windows() or []):
+            try:
+                if w.title() == "MIST Console":
+                    return bool(w.isVisible())
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return False
+
+
+def _dismiss_panel():
+    """Hide the overlay WITHOUT surfacing the console (Esc / click-away). Summoning
+    the overlay flips us to Accessory so the panel can float over fullscreen — which
+    also strips MIST's Dock tile. If the console window is up, we must flip back to
+    Regular here or the open window is left as an Accessory app: no Dock 'open' dot,
+    and its title bar can end up tucked under the menu bar. If only the overlay was
+    ever showing (quiet session), stay Accessory — there's no window to represent."""
+    _hide_panel()
+    if _console_visible():
+        _set_activation_policy(False)   # Regular -> Dock tile + 'open' dot return
+        _set_dock_icon()                # re-assert MIST's icon after the flip
+        # The policy flip + focus churn can leave the window crossing the menu bar;
+        # re-clamp it once the run loop has applied the policy change.
+        try:
+            from PyObjCTools import AppHelper
+            AppHelper.callLater(0.08, _fit_main_window)
+        except Exception:
+            _fit_main_window()
+    else:
+        _set_activation_policy(True)     # overlay-only session stays Accessory
 
 
 def _surface():

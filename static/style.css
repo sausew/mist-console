@@ -728,10 +728,14 @@ html[data-theme="solarpunk"] .tab.active {
 }
 html[data-theme="solarpunk"] .tab.pinned { border-left: 3px solid var(--gold); }
 html[data-theme="solarpunk"] .tab.pinned.active { border: 1px solid var(--teal); border-left: 3px solid var(--gold); }
-/* pin: outlined chip so it's clearly a button against the light tab */
+/* pin: outlined SQUARE chip so it's clearly a button against the light tab.
+   Fixed equal width/height (the 11px pushpin centers via the base inline-flex
+   rules) so it reads as a square, not the squished pill that padding+line-height
+   produced. */
 html[data-theme="solarpunk"] .tab .tpin {
-  color: var(--dim); border: 1px solid var(--line); border-radius: 6px;
-  padding: 0 4px; line-height: 16px; background: var(--surface);
+  color: var(--dim); border: 1px solid var(--line); border-radius: 4px;
+  width: 18px; height: 18px; padding: 0; box-sizing: border-box;
+  background: var(--surface);
 }
 html[data-theme="solarpunk"] .tab:hover .tpin { border-color: var(--gold); color: var(--teal); }
 html[data-theme="solarpunk"] .tab .tpin.on {
