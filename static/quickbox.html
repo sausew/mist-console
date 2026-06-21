@@ -117,20 +117,19 @@
   .picker .plist::-webkit-scrollbar { width: 8px; }
   .picker .plist::-webkit-scrollbar-thumb { background: rgba(var(--q-acc),0.3); border-radius: 8px; }
 
-  /* Solarpunk: flowering vines growing over the summon box */
+  /* Solarpunk: gilded Art Nouveau flourishes spilling over the summon box's top
+     corners (genuine public-domain art — see ART-CREDITS.md) */
   html[data-theme="solarpunk"] .box { overflow: visible; }
-  /* flowering vine creeping across the top edge */
-  html[data-theme="solarpunk"] .box::before {
-    content: ""; position: absolute; left: -10px; right: -10px; top: -40px; height: 54px;
-    background: url("vine-h-lush.svg") repeat-x; background-size: auto 54px; background-position: center top;
-    pointer-events: none; z-index: 4;
-  }
-  /* flowering vine creeping along the bottom edge (flowers spilling down into the glow) */
+  html[data-theme="solarpunk"] .box::before,
   html[data-theme="solarpunk"] .box::after {
-    content: ""; position: absolute; left: -10px; right: -10px; bottom: -36px; height: 50px;
-    background: url("vine-h-lush.svg") repeat-x; background-size: auto 50px; background-position: center bottom;
-    transform: scaleY(-1); pointer-events: none; z-index: 4;
+    content: ""; position: absolute; top: -66px; width: 200px; height: 136px;
+    background-image: url("an-flourish.svg"); background-repeat: no-repeat; background-size: contain;
+    pointer-events: none; z-index: 5; opacity: .9;
   }
+  /* top-left: flip vertical so the spray grows up out of the corner */
+  html[data-theme="solarpunk"] .box::before { left: -18px; background-position: left bottom; transform: scaleY(-1); }
+  /* top-right: mirror it */
+  html[data-theme="solarpunk"] .box::after  { right: -18px; background-position: right bottom; transform: scale(-1,-1); }
 </style>
 </head>
 <body>

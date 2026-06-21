@@ -637,45 +637,43 @@ html[data-theme="solarpunk"] #topbar::after {
   content: ""; position: absolute; pointer-events: none; z-index: 0;
   background-repeat: no-repeat;
 }
-/* corner flourishes framing the conversation */
+/* All decorative art below is genuine public-domain Arts & Crafts / Art Nouveau
+   work, recolored to the theme. See ART-CREDITS.md for sources + licenses. */
+/* Art Nouveau corner bracket framing the top-left of the conversation
+   (flipped vertically: the source piece is drawn as a bottom-left corner) */
 html[data-theme="solarpunk"] #logs::before {
-  top: 0; left: 0; width: 224px; height: 224px;
-  background-image: url("vine-corner.svg"); background-size: contain; background-position: top left;
-  opacity: .9;
-  -webkit-mask-image: radial-gradient(300px 300px at top left, #000 60%, transparent 96%);
-          mask-image: radial-gradient(300px 300px at top left, #000 60%, transparent 96%);
+  top: 0; left: 0; width: 150px; height: 150px;
+  background-image: url("an-corner.svg"); background-size: contain; background-position: top left;
+  transform: scaleY(-1); transform-origin: top left; opacity: .5;
 }
-/* wide, lush flowering creeper filling the empty right column, full height to the top */
+/* faint William Morris "Venetian" wallpaper down the empty right column */
 html[data-theme="solarpunk"] #logs::after {
-  top: 0; right: 0; width: 230px; height: 100%;
-  background-image: url("vine-lush.svg"); background-size: 230px auto; background-repeat: repeat-y;
-  background-position: top right; opacity: .58;
+  top: 0; right: 0; width: 208px; height: 100%;
+  background-image: url("morris-venetian.svg"); background-size: 208px auto; background-repeat: repeat-y;
+  background-position: top right; opacity: .12;
   -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
           mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 44px), transparent 100%);
 }
-/* creeper running down the rail / chat seam — fade both ends so it never looks chopped */
+/* slender Art Nouveau tulip column running down the rail / chat seam —
+   fade both ends so it never looks chopped */
 html[data-theme="solarpunk"] #tabrail::after {
-  top: 0; right: 0; width: 60px; height: 100%;
-  background-image: url("vine-v.svg"); background-size: 60px auto; background-repeat: repeat-y;
-  background-position: top right; opacity: .5;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 64px, #000 calc(100% - 48px), transparent 100%);
-          mask-image: linear-gradient(to bottom, transparent 0, #000 64px, #000 calc(100% - 48px), transparent 100%);
+  top: 0; right: 1px; width: 38px; height: 100%;
+  background-image: url("an-tulip.svg"); background-size: 38px auto; background-repeat: repeat-y;
+  background-position: top center; opacity: .32;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 52px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 52px), transparent 100%);
 }
-/* creeper along the composer's top border */
+/* a single Art Nouveau headpiece, centered, as a divider above the composer */
 html[data-theme="solarpunk"] #composer::before {
-  top: 0; left: 0; right: 0; height: 26px;
-  background-image: url("vine-h.svg"); background-size: auto 26px; background-repeat: repeat-x;
-  background-position: left top; opacity: .55;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
-          mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
+  top: -17px; left: 0; right: 0; height: 16px;
+  background-image: url("an-headpiece.svg"); background-size: auto 16px; background-repeat: no-repeat;
+  background-position: center top; opacity: .5;
 }
-/* creeper along the top bar's bottom border */
+/* matching headpiece divider just below the top bar */
 html[data-theme="solarpunk"] #topbar::after {
-  bottom: 0; left: 0; right: 0; height: 22px;
-  background-image: url("vine-h.svg"); background-size: auto 22px; background-repeat: repeat-x;
-  background-position: left bottom; transform: scaleY(-1); opacity: .5;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
-          mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
+  bottom: -17px; left: 0; right: 0; height: 16px;
+  background-image: url("an-headpiece.svg"); background-size: auto 16px; background-repeat: no-repeat;
+  background-position: center bottom; opacity: .42;
 }
 
 /* --- top-bar chips/buttons + sidebar tabs read as raised cards --- */
