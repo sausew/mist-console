@@ -119,9 +119,12 @@ def _fit_main_window():
             f.origin.x, f.origin.y, f.size.width, f.size.height,
             vf.origin.x, vf.origin.y, vf.size.width, vf.size.height,
             fs, bool(win.isVisible())), flush=True)
-        # In native fullscreen the frame legitimately fills the screen (no menu bar);
-        # clamping to visibleFrame there would wrongly shrink the window. Leave it be.
-        if fs:
+        # In native fullscreen the frame legitimately fills the screen (no menu bar),
+        # and visibleFrame ~= frame; clamping there would wrongly shrink the window.
+        # Only bail when it's REALLY fullscreen — a stray style bit on a normal-Space
+        # window (visibleFrame still excludes the menu bar/Dock) must still be clamped.
+        if fs and abs(vf.size.height - f.size.height) < 2 and abs(vf.size.width - f.size.width) < 2:
+            print("fit: genuine fullscreen, leaving as-is", flush=True)
             return True
         w_ = min(f.size.width,  vf.size.width)
         h_ = min(f.size.height, vf.size.height)
