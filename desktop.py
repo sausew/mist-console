@@ -106,6 +106,11 @@ def _fit_main_window():
         if win is None:
             print("fit: no main window handle yet", flush=True)
             return False
+        # Don't touch the window mid fullscreen enter/exit animation — setFrame_ there
+        # corrupts the transition (and can crash). We re-clamp on DidExitFullScreen.
+        if _fs_busy:
+            print("fit: fullscreen transition in progress — skipping", flush=True)
+            return True
         fs = False
         try:
             from AppKit import NSWindowStyleMaskFullScreen
@@ -119,13 +124,12 @@ def _fit_main_window():
             f.origin.x, f.origin.y, f.size.width, f.size.height,
             vf.origin.x, vf.origin.y, vf.size.width, vf.size.height,
             fs, bool(win.isVisible())), flush=True)
-        # NEVER touch the frame of a fullscreen (or mid-transition) window. Calling
-        # setFrame_ on one throws an NSException that crashes the whole app, and it
-        # corrupts the window into a half-fullscreen state. We separately stop the
-        # window from ever entering fullscreen (see _lock_windowed), so in practice
-        # fs should always be False here; this is the belt to that suspenders.
+        # NEVER touch the frame of a fullscreen window. setFrame_ on one throws an
+        # NSException that crashes the app and corrupts it into a half-fullscreen state.
+        # Native fullscreen is fully supported — macOS reveals the title bar + controls
+        # on hover at the top; we just leave the window alone while it's fullscreen.
         if fs:
-            print("fit: window is fullscreen — not touching frame", flush=True)
+            print("fit: window is fullscreen — leaving it alone", flush=True)
             return True
         w_ = min(f.size.width,  vf.size.width)
         h_ = min(f.size.height, vf.size.height)
@@ -150,42 +154,8 @@ def _fit_main_window():
         return False
 
 
-_win_guard_token = None   # retained NSNotificationCenter observer (else it's freed)
-
-
-def _lock_windowed():
-    """Stop the console window from ever entering native fullscreen.
-
-    Root cause of the vanishing traffic lights: summoning the quick-access overlay
-    (which flips the app to Accessory and shows a CanJoinAllSpaces panel) was pulling
-    the MAIN window into native fullscreen — and a fullscreen window hides its
-    X/minimize/zoom controls by design. Switching the window's collection behavior to
-    FullScreenNone makes it impossible for it (or the overlay's Space juggling) to go
-    fullscreen, so the controls always stay visible. The green button becomes a plain
-    zoom (maximize to the visible frame) instead of fullscreen — better for this app.
-    Main thread only; idempotent."""
-    win = _main_nswindow()
-    if win is None:
-        return
-    try:
-        from AppKit import (NSWindowCollectionBehaviorFullScreenPrimary,
-                            NSWindowCollectionBehaviorFullScreenAuxiliary,
-                            NSWindowCollectionBehaviorFullScreenNone)
-        b = win.collectionBehavior()
-        b &= ~(NSWindowCollectionBehaviorFullScreenPrimary
-               | NSWindowCollectionBehaviorFullScreenAuxiliary)
-        b |= NSWindowCollectionBehaviorFullScreenNone
-        win.setCollectionBehavior_(b)
-        # If it's already (corruptly) fullscreen, take it back out so the controls return.
-        try:
-            from AppKit import NSWindowStyleMaskFullScreen
-            if win.styleMask() & NSWindowStyleMaskFullScreen:
-                win.toggleFullScreen_(None)
-        except Exception:
-            pass
-        print("locked console window to windowed (no fullscreen)", flush=True)
-    except Exception as e:
-        print("lock-windowed skipped:", e, flush=True)
+_win_guard_token = None   # retained NSNotificationCenter observers (else they're freed)
+_fs_busy = False          # True during a fullscreen enter/exit animation
 
 
 def _install_window_guard():
@@ -195,7 +165,13 @@ def _install_window_guard():
     by its background. _fit_main_window only acts when the window is actually out of
     bounds, so a normal drag does nothing until the title bar hits the menu bar, then
     it pins to just below it. setFrame triggers another move notification, but by then
-    we're in bounds so it's a no-op — no feedback loop. Main thread only; idempotent."""
+    we're in bounds so it's a no-op — no feedback loop.
+
+    Fullscreen is fully supported: we track the enter/exit animation with a _fs_busy
+    flag and _fit_main_window refuses to touch the window while it's busy OR actually
+    fullscreen. (Calling setFrame_ mid-transition is what was corrupting fullscreen and
+    crashing the app.) On DidExitFullScreen we re-clamp so the now-windowed window sits
+    below the menu bar. Main thread only; idempotent."""
     global _win_guard_token
     if _win_guard_token is not None:
         return
@@ -209,13 +185,27 @@ def _install_window_guard():
         def _on_change(note):
             _fit_main_window()
 
-        # One observer per relevant notification, all scoped to our window.
+        def _fs_begin(note):
+            global _fs_busy
+            _fs_busy = True
+
+        def _fs_enter_done(note):
+            global _fs_busy
+            _fs_busy = False   # now fully fullscreen; _fit_main_window bails on the fs bit
+
+        def _fs_exit_done(note):
+            global _fs_busy
+            _fs_busy = False
+            _fit_main_window()  # back to windowed — clamp below the menu bar
+
         toks = []
-        for name in ("NSWindowDidMoveNotification",
-                     "NSWindowDidResizeNotification",
-                     "NSWindowDidExitFullScreenNotification"):
-            toks.append(nc.addObserverForName_object_queue_usingBlock_(
-                name, win, None, _on_change))
+        for name, fn in (("NSWindowDidMoveNotification", _on_change),
+                         ("NSWindowDidResizeNotification", _on_change),
+                         ("NSWindowWillEnterFullScreenNotification", _fs_begin),
+                         ("NSWindowDidEnterFullScreenNotification", _fs_enter_done),
+                         ("NSWindowWillExitFullScreenNotification", _fs_begin),
+                         ("NSWindowDidExitFullScreenNotification", _fs_exit_done)):
+            toks.append(nc.addObserverForName_object_queue_usingBlock_(name, win, None, fn))
         _win_guard_token = toks
     except Exception as e:
         print("window guard skipped:", e, flush=True)
@@ -425,10 +415,6 @@ def _show_panel():
     try:
         if _panel is None:
             _build_panel()
-        # Re-assert that the main window can't go fullscreen BEFORE we flip to
-        # Accessory / show the all-Spaces panel — that combination was pulling the
-        # console into fullscreen (which hides its traffic-light controls).
-        _lock_windowed()
         # Go Accessory so the panel can float over (and take focus inside) another
         # app's fullscreen Space. No-op if already Accessory, so no Dock flicker.
         _set_activation_policy(True)
@@ -478,10 +464,7 @@ def _fit_burst():
     things in the overlay flow: pywebview's show() (which can reposition the window a
     tick later) and the Accessory->Regular policy flip (until it lands, visibleFrame
     can still report the menu-bar area as usable, so a too-early fit sees the window as
-    'in bounds' and leaves its title bar under the menu bar). Retrying covers both.
-    Also re-assert windowed mode first, so if the overlay flow pushed the window into
-    fullscreen (hiding the traffic lights), we pull it back out and the controls return."""
-    _lock_windowed()
+    'in bounds' and leaves its title bar under the menu bar). Retrying covers both."""
     _fit_main_window()
     try:
         from PyObjCTools import AppHelper
@@ -645,7 +628,6 @@ def _setup():
     # then clamp it inside the visible frame so its top isn't hidden by the menu bar.
     def _try_fit(n=0):
         if _fit_main_window():
-            _lock_windowed()          # never let the overlay push it into fullscreen
             _install_window_guard()   # keep it clamped on every later move/resize
             return
         if n > 20:
