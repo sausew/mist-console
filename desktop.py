@@ -131,6 +131,11 @@ def _fit_main_window():
             y = vf.origin.y
         if (abs(w_ - f.size.width) > 1 or abs(h_ - f.size.height) > 1
                 or abs(x - f.origin.x) > 1 or abs(y - f.origin.y) > 1):
+            print("fit: move frame (%.0f,%.0f %.0fx%.0f) -> (%.0f,%.0f %.0fx%.0f) "
+                  "vf=(%.0f,%.0f %.0fx%.0f)" % (
+                      f.origin.x, f.origin.y, f.size.width, f.size.height,
+                      x, y, w_, h_, vf.origin.x, vf.origin.y, vf.size.width,
+                      vf.size.height), flush=True)
             win.setFrame_display_(NSMakeRect(x, y, w_, h_), True)
         return True
     except Exception as e:
@@ -408,20 +413,33 @@ def _hide_panel():
 def _console_visible():
     """True if the main console window is live and actually on screen. After a quiet
     (overlay-only) launch the window exists but is hidden, so we check AppKit's
-    isVisible rather than just whether the window object exists."""
+    isVisible. Use the real NSWindow handle (title matching is unreliable for a
+    WKWebView window — it was silently failing, so the dismiss path skipped the
+    re-fit and left the window stuck under the menu bar)."""
     if _main_window is None or _window_closed:
         return False
     try:
-        from AppKit import NSApp
-        for w in (NSApp().windows() or []):
-            try:
-                if w.title() == "MIST Console":
-                    return bool(w.isVisible())
-            except Exception:
-                pass
+        win = _main_nswindow()
+        if win is not None:
+            return bool(win.isVisible())
     except Exception:
         pass
     return False
+
+
+def _fit_burst():
+    """Re-clamp the main window several times over ~0.8s. A single fit races two async
+    things in the overlay flow: pywebview's show() (which can reposition the window a
+    tick later) and the Accessory->Regular policy flip (until it lands, visibleFrame
+    can still report the menu-bar area as usable, so a too-early fit sees the window as
+    'in bounds' and leaves its title bar under the menu bar). Retrying covers both."""
+    _fit_main_window()
+    try:
+        from PyObjCTools import AppHelper
+        for d in (0.05, 0.2, 0.45, 0.8):
+            AppHelper.callLater(d, _fit_main_window)
+    except Exception:
+        pass
 
 
 def _dismiss_panel():
@@ -437,11 +455,7 @@ def _dismiss_panel():
         _set_dock_icon()                # re-assert MIST's icon after the flip
         # The policy flip + focus churn can leave the window crossing the menu bar;
         # re-clamp it once the run loop has applied the policy change.
-        try:
-            from PyObjCTools import AppHelper
-            AppHelper.callLater(0.08, _fit_main_window)
-        except Exception:
-            _fit_main_window()
+        _fit_burst()
     else:
         _set_activation_policy(True)     # overlay-only session stays Accessory
 
@@ -465,7 +479,8 @@ def _surface():
         except Exception:
             pass
         _set_dock_icon()      # we just flipped to Regular — (re)assert MIST's icon
-        _fit_main_window()    # keep the surfaced window clear of the menu bar
+        _fit_burst()          # keep the surfaced window clear of the menu bar
+                              # (show() repositions a tick later, so retry)
 
     try:
         from PyObjCTools import AppHelper
