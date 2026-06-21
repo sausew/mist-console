@@ -104,18 +104,25 @@ def _fit_main_window():
         from Foundation import NSMakeRect
         win = _main_nswindow()
         if win is None:
+            print("fit: no main window handle yet", flush=True)
             return False
-        # In native fullscreen the frame legitimately fills the screen (no menu bar);
-        # clamping to visibleFrame there would wrongly shrink the window. Leave it be.
+        fs = False
         try:
             from AppKit import NSWindowStyleMaskFullScreen
-            if win.styleMask() & NSWindowStyleMaskFullScreen:
-                return True
+            fs = bool(win.styleMask() & NSWindowStyleMaskFullScreen)
         except Exception:
             pass
         scr = win.screen() or NSScreen.mainScreen()
         vf = scr.visibleFrame()           # bottom-left origin; excludes menu bar + Dock
         f = win.frame()
+        print("fit: frame=(%.0f,%.0f %.0fx%.0f) vf=(%.0f,%.0f %.0fx%.0f) fs=%s vis=%s" % (
+            f.origin.x, f.origin.y, f.size.width, f.size.height,
+            vf.origin.x, vf.origin.y, vf.size.width, vf.size.height,
+            fs, bool(win.isVisible())), flush=True)
+        # In native fullscreen the frame legitimately fills the screen (no menu bar);
+        # clamping to visibleFrame there would wrongly shrink the window. Leave it be.
+        if fs:
+            return True
         w_ = min(f.size.width,  vf.size.width)
         h_ = min(f.size.height, vf.size.height)
         x, y = f.origin.x, f.origin.y
@@ -131,11 +138,7 @@ def _fit_main_window():
             y = vf.origin.y
         if (abs(w_ - f.size.width) > 1 or abs(h_ - f.size.height) > 1
                 or abs(x - f.origin.x) > 1 or abs(y - f.origin.y) > 1):
-            print("fit: move frame (%.0f,%.0f %.0fx%.0f) -> (%.0f,%.0f %.0fx%.0f) "
-                  "vf=(%.0f,%.0f %.0fx%.0f)" % (
-                      f.origin.x, f.origin.y, f.size.width, f.size.height,
-                      x, y, w_, h_, vf.origin.x, vf.origin.y, vf.size.width,
-                      vf.size.height), flush=True)
+            print("fit: -> move to (%.0f,%.0f %.0fx%.0f)" % (x, y, w_, h_), flush=True)
             win.setFrame_display_(NSMakeRect(x, y, w_, h_), True)
         return True
     except Exception as e:
@@ -611,6 +614,7 @@ def _setup():
     # agent calls via POST /show-quick.
     # pywebview window methods are thread-safe (they marshal to the UI thread),
     # so the Flask worker thread can call this directly.
+    appmod.fit_now = lambda: _run_main(_fit_main_window)   # diagnostic: POST /win-debug
     appmod.show_quick = _quick_show
     # A second launch of the .app posts /raise so this instance surfaces instead
     # of a duplicate process starting (see the single-instance guard in main()).
