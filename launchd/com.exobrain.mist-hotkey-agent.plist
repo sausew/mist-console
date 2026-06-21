@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.exobrain.mist-hotkey-agent</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/alexhedtke/.local/bin/uv</string><string>run</string><string>--script</string><string>/Users/alexhedtke/Documents/mist-console/mist-hotkey-agent.py</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/alexhedtke/Documents/mist-console</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/Users/alexhedtke/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/Users/alexhedtke/Documents/mist-console/agent.log</string>
+  <key>StandardErrorPath</key><string>/Users/alexhedtke/Documents/mist-console/agent.log</string>
+</dict>
+</plist>

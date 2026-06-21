@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.mist.routine.afternoon-email-scan</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/alexhedtke/Documents/mist-console/run-routine.sh</string>
+		<string>afternoon-email-scan</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/Users/alexhedtke/Documents/mist-console/routine-runs.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/alexhedtke/Documents/mist-console/routine-runs.log</string>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>14</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+			<key>Weekday</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>14</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+			<key>Weekday</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>14</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+			<key>Weekday</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>14</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+			<key>Weekday</key>
+			<integer>4</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>14</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+			<key>Weekday</key>
+			<integer>5</integer>
+		</dict>
+	</array>
+</dict>
+</plist>
