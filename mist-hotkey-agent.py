@@ -228,17 +228,6 @@ def _set_panel_height(h):
         NSMakeRect(f.origin.x, f.origin.y, QW, h), True, False)
 
 
-def _diag(tag):
-    try:
-        from AppKit import NSWorkspace
-        fa = NSWorkspace.sharedWorkspace().frontmostApplication()
-        fan = fa.localizedName() if fa else None
-        onscr = bool(_panel.isOnActiveSpace()) if _panel else None
-        print("diag[%s] front=%r onActiveSpace=%s" % (tag, fan, onscr), flush=True)
-    except Exception as e:
-        print("diag err:", e, flush=True)
-
-
 def _show_panel():
     try:
         _make_panel()          # FRESH panel each summon -> reliably joins the active Space
@@ -254,7 +243,6 @@ def _show_panel():
         except Exception:
             pass
         print("quick-access: overlay shown, key =", bool(_panel.isKeyWindow()), flush=True)
-        _diag("after-show")
     except Exception as e:
         print("quick-access: show error:", e, flush=True)
 

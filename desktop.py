@@ -104,12 +104,10 @@ def _fit_main_window():
         from Foundation import NSMakeRect
         win = _main_nswindow()
         if win is None:
-            print("fit: no main window handle yet", flush=True)
             return False
         # Don't touch the window mid fullscreen enter/exit animation — setFrame_ there
         # corrupts the transition (and can crash). We re-clamp on DidExitFullScreen.
         if _fs_busy:
-            print("fit: fullscreen transition in progress — skipping", flush=True)
             return True
         fs = False
         try:
@@ -117,20 +115,15 @@ def _fit_main_window():
             fs = bool(win.styleMask() & NSWindowStyleMaskFullScreen)
         except Exception:
             pass
-        scr = win.screen() or NSScreen.mainScreen()
-        vf = scr.visibleFrame()           # bottom-left origin; excludes menu bar + Dock
-        f = win.frame()
-        print("fit: frame=(%.0f,%.0f %.0fx%.0f) vf=(%.0f,%.0f %.0fx%.0f) fs=%s vis=%s" % (
-            f.origin.x, f.origin.y, f.size.width, f.size.height,
-            vf.origin.x, vf.origin.y, vf.size.width, vf.size.height,
-            fs, bool(win.isVisible())), flush=True)
         # NEVER touch the frame of a fullscreen window. setFrame_ on one throws an
         # NSException that crashes the app and corrupts it into a half-fullscreen state.
         # Native fullscreen is fully supported — macOS reveals the title bar + controls
         # on hover at the top; we just leave the window alone while it's fullscreen.
         if fs:
-            print("fit: window is fullscreen — leaving it alone", flush=True)
             return True
+        scr = win.screen() or NSScreen.mainScreen()
+        vf = scr.visibleFrame()           # bottom-left origin; excludes menu bar + Dock
+        f = win.frame()
         w_ = min(f.size.width,  vf.size.width)
         h_ = min(f.size.height, vf.size.height)
         x, y = f.origin.x, f.origin.y
@@ -146,7 +139,6 @@ def _fit_main_window():
             y = vf.origin.y
         if (abs(w_ - f.size.width) > 1 or abs(h_ - f.size.height) > 1
                 or abs(x - f.origin.x) > 1 or abs(y - f.origin.y) > 1):
-            print("fit: -> move to (%.0f,%.0f %.0fx%.0f)" % (x, y, w_, h_), flush=True)
             win.setFrame_display_(NSMakeRect(x, y, w_, h_), True)
         return True
     except Exception as e:
@@ -547,12 +539,12 @@ def _surface():
     """Enter: hide the overlay, bring MIST's main window up. The main window polls
     /pending-open (~1.5s) to jump to the new chat — don't evaluate_js on the main
     thread (it deadlocks)."""
-    _hide_panel()
-    _recover_if_corrupt_fullscreen()   # safety net (no-op in genuine fullscreen)
-    # Back to a normal Dock app while the full console is in use — only if we actually
-    # went Accessory (we don't when the console is fullscreen, to avoid corrupting it).
-    if _overlay_went_accessory:
-        _set_activation_policy(False)
+    # Always a normal Dock app once its window is up. (A cold launch from the overlay
+    # starts Accessory + hidden so no Dock icon shows for an overlay-only summon; this
+    # flip restores the icon when the window actually surfaces.) The overlay now lives
+    # in the always-accessory hotkey agent, so the console never goes Accessory while
+    # its window is shown and can't corrupt its own fullscreen.
+    _set_activation_policy(False)
 
     def _raise():
         # Flipping Accessory->Regular doesn't take effect until the run loop spins,
@@ -697,7 +689,6 @@ def _setup():
     # agent calls via POST /show-quick.
     # pywebview window methods are thread-safe (they marshal to the UI thread),
     # so the Flask worker thread can call this directly.
-    appmod.fit_now = lambda: _run_main(_fit_main_window)   # diagnostic: POST /win-debug
     appmod.show_quick = _quick_show
     # A second launch of the .app posts /raise so this instance surfaces instead
     # of a duplicate process starting (see the single-instance guard in main()).

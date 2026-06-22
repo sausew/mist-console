@@ -193,9 +193,6 @@ show_quick = None
 # launch of the .app hits POST /raise so the already-running instance comes
 # forward instead of a duplicate process starting (see desktop.py single-instance).
 surface_main = None
-# desktop.py sets this to a main-thread "re-clamp the main window below the menu bar"
-# callback. Temporary diagnostic hook so the window fit can be driven over HTTP.
-fit_now = None
 
 # MIST spinner verbs (reuse the ones from the CLI settings).
 def _load_spinner_verbs():
@@ -603,17 +600,6 @@ def raise_route():
             return jsonify({"ok": True})
         return jsonify({"ok": False, "error": "no window"}), 503
     return jsonify({"ok": False, "error": "no window"}), 503
-
-
-@app.route("/win-debug", methods=["POST"])
-def win_debug_route():
-    """Temporary diagnostic: force a main-window re-fit (logs frame/visibleFrame/
-    fullscreen state to desktop.log). Lets the fit be driven without reproducing the
-    overlay dance by hand."""
-    if fit_now:
-        fit_now()
-        return jsonify({"ok": True})
-    return jsonify({"ok": False, "error": "no hook"}), 503
 
 
 @app.route("/quick-access/diag")
