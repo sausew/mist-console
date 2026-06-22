@@ -24,7 +24,7 @@ from flask import Flask, Response, jsonify, request, send_from_directory
 
 import quickaccess
 from bridge import (ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH,
-                    DEFAULT_PERMISSION_MODE)
+                    DEFAULT_PERMISSION_MODE, IDLE_REAP_SEC)
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
@@ -1089,11 +1089,28 @@ def _periodic_save():
         _save_meta()
 
 
+def _reaper():
+    """Put idle chat backends dormant so they stop pinning RAM/CPU once a
+    conversation has gone quiet (see bridge.IDLE_REAP_SEC). Dormant chats keep
+    their on-disk transcript and revive on the next send via --resume, so this is
+    invisible to the user beyond freeing memory."""
+    if IDLE_REAP_SEC <= 0:
+        return
+    while True:
+        time.sleep(60)
+        try:
+            for s in list(_sessions.values()):
+                s.reap_if_idle(IDLE_REAP_SEC)
+        except Exception:
+            pass
+
+
 _load_meta()
 _load_notes()
 _import_existing()
 quickaccess.load()
 threading.Thread(target=_periodic_save, daemon=True).start()
+threading.Thread(target=_reaper, daemon=True).start()
 
 
 if __name__ == "__main__":

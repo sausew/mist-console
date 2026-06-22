@@ -32,6 +32,18 @@ HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 CTX_WARN_PCT = 60
 CTX_HARD_PCT = 80
 
+# Idle-process reaper. Each open chat holds a live `claude` backend (~300 MB plus
+# a steady sliver of CPU) for as long as the Console runs, even when the
+# conversation has been untouched for hours — so a day of chat-hopping leaves a
+# dozen idle backends pinning GBs of RAM. After IDLE_REAP_SEC of no activity (and
+# no in-flight turn) the reaper puts a backend dormant; the next send revives it
+# via --resume with full context. This is pure RAM/CPU reclamation: a --resume
+# turn re-bills the whole conversation regardless (see the CTX cost note above),
+# and the warm prompt cache is already gone after ~5 min idle, so reaping a
+# long-idle chat costs zero extra tokens. Set MIST_CONSOLE_IDLE_REAP_SEC=0 to
+# disable.
+IDLE_REAP_SEC = int(os.environ.get("MIST_CONSOLE_IDLE_REAP_SEC", "900"))
+
 
 def _tail_lines(path, max_lines):
     """Return the last `max_lines` lines of a (possibly huge) jsonl without reading
@@ -140,6 +152,7 @@ class ClaudeSession:
         self._started_at = 0.0
         self._saw_init = False
         self._intentional_stop = False
+        self._turn_active = False    # a send is in flight (no result yet); blocks reaping
         self._ctx_warned = False     # one-shot soft warning at CTX_WARN_PCT
         self._ctx_override = False    # one-shot hard-cap override (next send passes)
 
@@ -276,6 +289,7 @@ class ClaudeSession:
     def _watch(self):
         code = self.proc.wait()
         self.alive = False
+        self._turn_active = False
         if self._intentional_stop:           # close or model switch — not a crash
             self._intentional_stop = False
             return
@@ -321,6 +335,23 @@ class ClaudeSession:
         if self.alive:
             self.stop()
 
+    def reap_if_idle(self, timeout):
+        """Put a live-but-idle backend dormant to reclaim its RAM/CPU; returns
+        True if reaped. Skips any session with an in-flight turn — a long coding
+        turn looks 'idle' by last_activity alone (it's only refreshed on send and
+        result), so the _turn_active guard is what keeps the reaper from killing
+        work mid-stream. The next send revives via --resume with full context, so
+        no conversation is lost and no extra tokens are spent (see IDLE_REAP_SEC).
+        Mirrors set_model/set_permission: clear _resume_tried first so the revive
+        actually --resumes instead of starting fresh."""
+        if timeout <= 0 or not self.alive or self._turn_active:
+            return False
+        if time.time() - self.last_activity < timeout:
+            return False
+        self._resume_tried = False
+        self.stop()
+        return True
+
     # ---- io ----------------------------------------------------------------
     def _read_stdout(self):
         for line in self.proc.stdout:
@@ -346,6 +377,7 @@ class ClaudeSession:
                     self._last_msg_usage = mu
             elif obj.get("type") == "result":
                 self.last_activity = time.time()
+                self._turn_active = False   # turn done; reaper may reclaim once idle
                 self._emit_context(obj)
             elif obj.get("type") == "rate_limit_event":
                 # Keep the usage badges' reset/status fresh during Console-only
@@ -469,6 +501,7 @@ class ClaudeSession:
         try:
             self.proc.stdin.write(json.dumps(msg) + "\n")
             self.proc.stdin.flush()
+            self._turn_active = True   # cleared on the matching result (or exit)
             return True
         except (BrokenPipeError, ValueError, OSError):
             self.alive = False
