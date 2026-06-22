@@ -10,6 +10,12 @@ Adds:
 - a native Edit menu so Cmd+X/C/V/A/Z and the right-click menu work in WKWebView
 - a file-picker bridge (window.pywebview.api.pick_file) → native open dialog
 """
+try:
+    import setproctitle
+    setproctitle.setproctitle("MIST Console")
+except ImportError:
+    pass  # cosmetic process name only; never block startup on it
+
 import json
 import os
 import signal

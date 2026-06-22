@@ -5,6 +5,12 @@ Multi-session with persistence: sessions + metadata survive restarts (loaded as
 dormant, transcript visible, process spawned lazily on first send). SSE per
 session replays full history on connect.
 """
+try:
+    import setproctitle
+    setproctitle.setproctitle("MIST Console Server")
+except ImportError:
+    pass  # cosmetic process name only; never block startup on it
+
 import json
 import logging
 import os

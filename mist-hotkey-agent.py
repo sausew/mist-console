@@ -24,6 +24,12 @@ On the gesture:
 Runs as a LaunchAgent (RunAtLoad + KeepAlive), windowless, so it survives the console
 being closed. Reuses quickaccess.py for the gesture detection.
 """
+try:
+    import setproctitle
+    setproctitle.setproctitle("MIST Hotkey Agent")
+except ImportError:
+    pass  # cosmetic process name only; never block startup on it
+
 import json
 import os
 import subprocess
