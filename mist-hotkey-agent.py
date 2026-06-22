@@ -201,10 +201,32 @@ def _set_panel_height(h):
         NSMakeRect(f.origin.x, f.origin.y, QW, h), True, False)
 
 
+def _activation_bounce():
+    """Float the overlay ON TOP of whatever Space is active — including another app's
+    native-fullscreen Space — instead of dropping it on the desktop behind that app.
+
+    The window server only places a new window on the active (possibly fullscreen)
+    Space when the showing process *transitions* Regular -> Accessory; merely being a
+    permanently-Accessory app doesn't trigger it (the panel then lands on the desktop,
+    behind the fullscreen app). So bounce through Regular and back to Accessory right
+    before we order the panel front. We have no window of our own, so this is free —
+    and we end up Accessory again, so no Dock icon lingers. (This is the same
+    TransformProcessType dance Electron does for visibleOnFullScreen popovers.)"""
+    try:
+        from AppKit import (NSApplication, NSApplicationActivationPolicyRegular,
+                            NSApplicationActivationPolicyAccessory)
+        app = NSApplication.sharedApplication()
+        app.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+        app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
+    except Exception as e:
+        print("activation bounce skipped:", e, flush=True)
+
+
 def _show_panel():
     try:
         if _panel is None:
             _build_panel()
+        _activation_bounce()   # let the panel join the active (fullscreen) Space
         _position_panel()
         _panel.orderFrontRegardless()
         _panel.makeKeyAndOrderFront_(None)
