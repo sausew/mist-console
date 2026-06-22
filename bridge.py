@@ -474,6 +474,85 @@ class ClaudeSession:
             self.alive = False
             return False
 
+    # ---- auth slash commands ----------------------------------------------
+    # The headless `claude -p` stream-json process does NOT execute interactive
+    # slash commands typed as input, and /login needs a browser OAuth round-trip
+    # a piped process can't drive on its own. So when the user types /login (or
+    # /logout, /auth) in the Console we DON'T forward it to stdin — we shell out
+    # to `claude auth ...`, stream its output into the chat as notices, and
+    # restart this session on a successful (re-)login so the live process picks
+    # up the fresh credentials. Without this, /login silently does nothing.
+    AUTH_PATH_PREFIX = (os.path.expanduser("~/.npm-global/bin")
+                        + ":/opt/homebrew/bin:/usr/local/bin:")
+
+    def maybe_auth_command(self, text):
+        """If `text` is an auth slash command the headless process can't run,
+        handle it out of band and return True (consumed). Else return False."""
+        t = (text or "").strip()
+        low = t.lower()
+        if low in ("/login", "/signin") or low.startswith(("/login ", "/signin ")):
+            rest = t.split(None, 1)[1].strip() if " " in t else ""
+            if rest.lower() == "status":
+                self._dispatch_auth(t, "status", [])
+            else:
+                args = ["--claudeai"]
+                if rest.lower() == "console":
+                    args = ["--console"]
+                elif "@" in rest:
+                    args += ["--email", rest]
+                self._dispatch_auth(t, "login", args)
+            return True
+        if low == "/logout":
+            self._dispatch_auth(t, "logout", [])
+            return True
+        if low in ("/auth", "/auth status", "/whoami"):
+            self._dispatch_auth(t, "status", [])
+            return True
+        return False
+
+    def _dispatch_auth(self, echo, action, args):
+        self._broadcast({"type": "user_text", "text": echo})
+        if action == "login":
+            self._broadcast({"type": "notice",
+                             "text": "Signing in… a browser window will open to "
+                                     "finish authentication."})
+        threading.Thread(target=self._run_auth, args=(action, args), daemon=True).start()
+
+    def _run_auth(self, action, args):
+        cmd = [CLAUDE, "auth", action] + list(args)
+        env = dict(os.environ)
+        env["PATH"] = self.AUTH_PATH_PREFIX + env.get("PATH", "")
+        try:
+            p = subprocess.Popen(cmd, cwd=self.cwd, env=env,
+                                 stdin=subprocess.DEVNULL,
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 text=True, bufsize=1)
+        except Exception as e:
+            self._broadcast({"type": "notice", "text": f"Couldn't start auth: {e}",
+                             "err": True})
+            self._broadcast({"type": "status_idle"})
+            return
+        for line in p.stdout:
+            line = line.rstrip()
+            if line:
+                self._broadcast({"type": "notice", "text": line})
+        code = p.wait()
+        if action == "login" and code == 0:
+            # Restart the live process so it loads the fresh credentials. Clearing
+            # _resume_tried lets it --resume the same conversation under new auth.
+            if self.alive:
+                self._resume_tried = False
+                self.stop()
+            self._broadcast({"type": "notice",
+                             "text": "Signed in. Send your message again to continue."})
+        elif action == "logout" and code == 0:
+            self._broadcast({"type": "notice", "text": "Signed out."})
+        elif code != 0:
+            self._broadcast({"type": "notice",
+                             "text": f"`claude auth {action}` exited with code {code}.",
+                             "err": True})
+        self._broadcast({"type": "status_idle"})
+
     def stop(self):
         self._intentional_stop = True
         try:

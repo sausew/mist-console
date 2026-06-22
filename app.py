@@ -487,6 +487,10 @@ def send(sid):
     text = (request.get_json(silent=True) or {}).get("text", "").strip()
     if not text:
         return jsonify({"ok": False, "error": "empty"}), 400
+    # Auth slash commands (/login, /logout, /auth) can't run inside the headless
+    # claude process — handle them out of band instead of forwarding to stdin.
+    if s.maybe_auth_command(text):
+        return jsonify({"ok": True, "auth": True})
     # Context-cost cap: hold the first send into a chat that's past the threshold
     # (a resumed/large conversation re-bills its whole window every turn). The
     # front-end restores the user's text so nothing is lost; sending again overrides.
