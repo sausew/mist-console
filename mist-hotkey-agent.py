@@ -128,10 +128,10 @@ def _ensure_webview():
                     action = str(message.body())
                     print("quick-access: panel msg:", action, flush=True)
                     if action == "surface":
-                        _hide_panel()
+                        _dismiss_overlay()         # overlay's job is done -> tear it down
                         _post("/raise")            # console surfaces its own window
                     elif action == "screenshot":
-                        _take_screenshot()
+                        _take_screenshot()         # temporary hide + re-show (keeps webview)
                     elif action == "url":
                         _get_url()
                     elif action == "expand":
@@ -139,7 +139,7 @@ def _ensure_webview():
                     elif action == "collapse":
                         _set_panel_height(QH)
                     else:
-                        _hide_panel()
+                        _dismiss_overlay()         # dismiss / unknown -> tear it down
                 except Exception as e:
                     print("quick-access: handler error:", e, flush=True)
         _handler_class = _MistHandler
@@ -254,11 +254,45 @@ def _show_panel():
 
 
 def _hide_panel():
+    """Temporarily order the panel out WITHOUT tearing down the webview — used by the
+    screenshot flow, which re-shows the same panel to attach the captured image."""
     try:
         if _panel:
             _panel.orderOut_(None)
     except Exception:
         pass
+
+
+def _dismiss_overlay():
+    """Fully dismiss the overlay: order out, then drop the panel AND the webview so the
+    WKWebView's content process actually exits instead of idling for the agent's whole
+    life (and orphaning to launchd across KeepAlive restarts — that is what was leaving
+    ~1 MB WebContent renderers piling up in Activity Monitor). The webview is rebuilt
+    lazily on the next summon; reloading the tiny local quickbox.html costs nothing."""
+    global _panel, _webview, _handler
+    try:
+        if _panel is not None:
+            _panel.orderOut_(None)
+            try:
+                _panel.setContentView_(None)   # detach webview before releasing the panel
+            except Exception:
+                pass
+            try:
+                _panel.close()
+            except Exception:
+                pass
+    finally:
+        _panel = None
+    try:
+        if _webview is not None:
+            _webview.stopLoading()
+            _webview.removeFromSuperview()
+    except Exception:
+        pass
+    # dropping the last Python refs lets pyobjc release the WKWebView, which terminates
+    # its WebContent/Networking/GPU helper processes.
+    _webview = None
+    _handler = None
 
 
 def _take_screenshot():
@@ -402,8 +436,26 @@ def _setup_status_item():
 
 
 def main():
+    import atexit
+    import signal
     from AppKit import NSApplication, NSApplicationActivationPolicyAccessory
     from PyObjCTools import AppHelper
+
+    # If the agent is told to quit (KeepAlive restart, logout), tear the overlay down
+    # first so its WebContent helper exits with us instead of orphaning to launchd.
+    atexit.register(_dismiss_overlay)
+
+    def _on_signal(signum, _frame):
+        try:
+            _dismiss_overlay()
+        finally:
+            os._exit(0)
+
+    for _sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            signal.signal(_sig, _on_signal)
+        except Exception:
+            pass
 
     app = NSApplication.sharedApplication()
     app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)  # no dock icon
