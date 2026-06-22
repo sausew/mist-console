@@ -412,12 +412,20 @@ def _set_panel_height(h):
 
 
 def _show_panel():
+    global _overlay_went_accessory
     try:
         if _panel is None:
             _build_panel()
         # Go Accessory so the panel can float over (and take focus inside) another
         # app's fullscreen Space. No-op if already Accessory, so no Dock flicker.
-        _set_activation_policy(True)
+        # BUT: an Accessory (LSUIElement) app cannot own a native-fullscreen Space, so
+        # flipping to Accessory while the CONSOLE itself is fullscreen tears that Space
+        # down and strands the window on the desktop with the fullscreen bit still set
+        # (menu bar then cuts off its top). When the console is fullscreen, stay Regular
+        # — the panel still floats via its CanJoinAllSpaces + high window level.
+        _overlay_went_accessory = not _main_window_is_fullscreen()
+        if _overlay_went_accessory:
+            _set_activation_policy(True)
         _position_panel()
         _panel.orderFrontRegardless()
         _panel.makeKeyAndOrderFront_(None)
@@ -440,6 +448,45 @@ def _hide_panel():
             _panel.orderOut_(None)
     except Exception:
         pass
+
+
+_overlay_went_accessory = False   # did the last summon flip us to Accessory?
+
+
+def _main_window_is_fullscreen():
+    """True if the console window is in native fullscreen (style bit set)."""
+    try:
+        from AppKit import NSWindowStyleMaskFullScreen
+        win = _main_nswindow()
+        return win is not None and bool(win.styleMask() & NSWindowStyleMaskFullScreen)
+    except Exception:
+        return False
+
+
+def _recover_if_corrupt_fullscreen():
+    """Recover the 'half-fullscreen' corruption: the window carries the fullscreen
+    style bit but is sitting on the normal desktop Space (so the menu bar/Dock are
+    reserved and visibleFrame is shorter than the frame). In GENUINE fullscreen the
+    frame equals the visible frame; the mismatch is the tell. Exit fullscreen cleanly
+    so the controls come back (then the DidExitFullScreen observer re-clamps it).
+    Returns True if it kicked off a recovery."""
+    win = _main_nswindow()
+    if win is None:
+        return False
+    try:
+        from AppKit import NSWindowStyleMaskFullScreen, NSScreen
+        if not (win.styleMask() & NSWindowStyleMaskFullScreen):
+            return False
+        scr = win.screen() or NSScreen.mainScreen()
+        vf = scr.visibleFrame()
+        f = win.frame()
+        if f.size.height > vf.size.height + 2:   # fs bit but desktop Space -> corrupt
+            print("recover: half-fullscreen detected — exiting fullscreen cleanly", flush=True)
+            win.toggleFullScreen_(None)
+            return True
+    except Exception as e:
+        print("recover skipped:", e, flush=True)
+    return False
 
 
 def _console_visible():
@@ -482,6 +529,10 @@ def _dismiss_panel():
     and its title bar can end up tucked under the menu bar. If only the overlay was
     ever showing (quiet session), stay Accessory — there's no window to represent."""
     _hide_panel()
+    # Safety net: if anything still left the window half-fullscreen, exit cleanly.
+    _recover_if_corrupt_fullscreen()
+    if not _overlay_went_accessory:
+        return   # we stayed Regular (console was fullscreen) — nothing to restore
     if _console_visible():
         _set_activation_policy(False)   # Regular -> Dock tile + 'open' dot return
         _set_dock_icon()                # re-assert MIST's icon after the flip
@@ -497,8 +548,11 @@ def _surface():
     /pending-open (~1.5s) to jump to the new chat — don't evaluate_js on the main
     thread (it deadlocks)."""
     _hide_panel()
-    # Back to a normal Dock app while the full console is in use.
-    _set_activation_policy(False)
+    _recover_if_corrupt_fullscreen()   # safety net (no-op in genuine fullscreen)
+    # Back to a normal Dock app while the full console is in use — only if we actually
+    # went Accessory (we don't when the console is fullscreen, to avoid corrupting it).
+    if _overlay_went_accessory:
+        _set_activation_policy(False)
 
     def _raise():
         # Flipping Accessory->Regular doesn't take effect until the run loop spins,
@@ -510,7 +564,7 @@ def _surface():
             _main_window.show()
         except Exception:
             pass
-        _set_dock_icon()      # we just flipped to Regular — (re)assert MIST's icon
+        _set_dock_icon()      # (re)assert MIST's icon
         _fit_burst()          # keep the surfaced window clear of the menu bar
                               # (show() repositions a tick later, so retry)
 
