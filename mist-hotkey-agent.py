@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["pyobjc-framework-Cocoa", "pyobjc-framework-WebKit"]
+# dependencies = ["pyobjc-framework-Cocoa", "pyobjc-framework-WebKit", "setproctitle"]
 # ///
 """
 mist-hotkey-agent.py — a tiny always-on background process that owns the MIST
