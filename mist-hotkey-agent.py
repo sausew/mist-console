@@ -106,27 +106,14 @@ def _run_main(fn):
 
 
 # ---- the glowing quick-entry overlay: a non-activating NSPanel + WKWebView --------
-def _build_panel():
-    from AppKit import (NSPanel, NSColor, NSBackingStoreBuffered,
-                        NSWindowStyleMaskBorderless, NSWindowStyleMaskNonactivatingPanel,
-                        NSScreenSaverWindowLevel,
-                        NSWindowCollectionBehaviorCanJoinAllSpaces,
-                        NSWindowCollectionBehaviorFullScreenAuxiliary,
-                        NSWindowCollectionBehaviorStationary)
+def _ensure_webview():
+    """Build the WKWebView + message handler ONCE; it's reused across panels so we
+    never reload quickbox.html on each summon."""
     from WebKit import WKWebView, WKWebViewConfiguration, WKUserContentController
     from Foundation import NSObject, NSURL, NSURLRequest, NSMakeRect
-    global _panel, _webview, _handler, _handler_class, _panel_class
-
-    if _panel_class is None:
-        # A borderless window returns canBecomeKeyWindow=False by default, so it
-        # can't take keyboard focus — override it (and main) to True.
-        class _MistPanel(NSPanel):
-            def canBecomeKeyWindow(self):
-                return True
-
-            def canBecomeMainWindow(self):
-                return True
-        _panel_class = _MistPanel
+    global _webview, _handler, _handler_class
+    if _webview is not None:
+        return
 
     if _handler_class is None:
         class _MistHandler(NSObject):
@@ -152,6 +139,53 @@ def _build_panel():
         _handler_class = _MistHandler
 
     rect = NSMakeRect(0, 0, QW, QH)
+    config = WKWebViewConfiguration.alloc().init()
+    ucc = WKUserContentController.alloc().init()
+    _handler = _handler_class.alloc().init()
+    ucc.addScriptMessageHandler_name_(_handler, "mist")
+    config.setUserContentController_(ucc)
+    wv = WKWebView.alloc().initWithFrame_configuration_(rect, config)
+    try:
+        wv.setValue_forKey_(False, "drawsBackground")   # transparent
+    except Exception:
+        pass
+    wv.loadRequest_(NSURLRequest.requestWithURL_(
+        NSURL.URLWithString_(BASE + "/quickbox.html")))
+    _webview = wv
+
+
+def _make_panel():
+    """Create a FRESH NSPanel for this summon and attach the (reused) webview.
+
+    A recycled panel goes stale across a Spaces reshuffle (e.g. restarting the console
+    tears down/recreates its fullscreen Space), after which orderFront drops it on the
+    desktop *behind* a fullscreen app instead of on the active Space (verified via
+    isOnActiveSpace going True->False). A freshly created panel reliably joins whatever
+    Space is active right now, so we rebuild it every time and reuse only the webview."""
+    from AppKit import (NSPanel, NSColor, NSBackingStoreBuffered,
+                        NSWindowStyleMaskBorderless, NSWindowStyleMaskNonactivatingPanel,
+                        NSScreenSaverWindowLevel,
+                        NSWindowCollectionBehaviorCanJoinAllSpaces,
+                        NSWindowCollectionBehaviorFullScreenAuxiliary,
+                        NSWindowCollectionBehaviorStationary)
+    from Foundation import NSMakeRect
+    global _panel, _panel_class
+
+    if _panel_class is None:
+        # A borderless window returns canBecomeKeyWindow=False by default, so it
+        # can't take keyboard focus — override it (and main) to True.
+        class _MistPanel(NSPanel):
+            def canBecomeKeyWindow(self):
+                return True
+
+            def canBecomeMainWindow(self):
+                return True
+        _panel_class = _MistPanel
+
+    _ensure_webview()
+
+    old = _panel
+    rect = NSMakeRect(0, 0, QW, QH)
     panel = _panel_class.alloc().initWithContentRect_styleMask_backing_defer_(
         rect, NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel,
         NSBackingStoreBuffered, False)
@@ -166,21 +200,14 @@ def _build_panel():
     panel.setFloatingPanel_(True)
     panel.setBecomesKeyOnlyIfNeeded_(False)
     panel.setHidesOnDeactivate_(False)
-
-    config = WKWebViewConfiguration.alloc().init()
-    ucc = WKUserContentController.alloc().init()
-    _handler = _handler_class.alloc().init()
-    ucc.addScriptMessageHandler_name_(_handler, "mist")
-    config.setUserContentController_(ucc)
-    wv = WKWebView.alloc().initWithFrame_configuration_(rect, config)
-    try:
-        wv.setValue_forKey_(False, "drawsBackground")   # transparent
-    except Exception:
-        pass
-    wv.loadRequest_(NSURLRequest.requestWithURL_(
-        NSURL.URLWithString_(BASE + "/quickbox.html")))
-    panel.setContentView_(wv)
-    _panel, _webview = panel, wv
+    panel.setReleasedWhenClosed_(False)
+    panel.setContentView_(_webview)   # moves the webview off the old panel
+    _panel = panel
+    if old is not None:
+        try:
+            old.orderOut_(None)
+        except Exception:
+            pass
 
 
 def _position_panel():
@@ -201,32 +228,20 @@ def _set_panel_height(h):
         NSMakeRect(f.origin.x, f.origin.y, QW, h), True, False)
 
 
-def _activation_bounce():
-    """Float the overlay ON TOP of whatever Space is active — including another app's
-    native-fullscreen Space — instead of dropping it on the desktop behind that app.
-
-    The window server only places a new window on the active (possibly fullscreen)
-    Space when the showing process *transitions* Regular -> Accessory; merely being a
-    permanently-Accessory app doesn't trigger it (the panel then lands on the desktop,
-    behind the fullscreen app). So bounce through Regular and back to Accessory right
-    before we order the panel front. We have no window of our own, so this is free —
-    and we end up Accessory again, so no Dock icon lingers. (This is the same
-    TransformProcessType dance Electron does for visibleOnFullScreen popovers.)"""
+def _diag(tag):
     try:
-        from AppKit import (NSApplication, NSApplicationActivationPolicyRegular,
-                            NSApplicationActivationPolicyAccessory)
-        app = NSApplication.sharedApplication()
-        app.setActivationPolicy_(NSApplicationActivationPolicyRegular)
-        app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
+        from AppKit import NSWorkspace
+        fa = NSWorkspace.sharedWorkspace().frontmostApplication()
+        fan = fa.localizedName() if fa else None
+        onscr = bool(_panel.isOnActiveSpace()) if _panel else None
+        print("diag[%s] front=%r onActiveSpace=%s" % (tag, fan, onscr), flush=True)
     except Exception as e:
-        print("activation bounce skipped:", e, flush=True)
+        print("diag err:", e, flush=True)
 
 
 def _show_panel():
     try:
-        if _panel is None:
-            _build_panel()
-        _activation_bounce()   # let the panel join the active (fullscreen) Space
+        _make_panel()          # FRESH panel each summon -> reliably joins the active Space
         _position_panel()
         _panel.orderFrontRegardless()
         _panel.makeKeyAndOrderFront_(None)
@@ -239,6 +254,7 @@ def _show_panel():
         except Exception:
             pass
         print("quick-access: overlay shown, key =", bool(_panel.isKeyWindow()), flush=True)
+        _diag("after-show")
     except Exception as e:
         print("quick-access: show error:", e, flush=True)
 
