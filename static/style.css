@@ -638,6 +638,10 @@ html[data-theme="solarpunk"] #topbar .brand,
 html[data-theme="solarpunk"] #topbar .meta,
 html[data-theme="solarpunk"] #topbar .actions,
 html[data-theme="solarpunk"] #composer > * { position: relative; z-index: 1; }
+/* ...but #slashMenu is also a direct child of #composer and MUST stay an
+   absolutely-positioned overlay — otherwise the rule above turns it into an
+   in-flow flex item that balloons the composer row and warps the whole UI. */
+html[data-theme="solarpunk"] #slashMenu { position: absolute; z-index: 40; }
 html[data-theme="solarpunk"] #logs::before,
 html[data-theme="solarpunk"] #logs::after,
 html[data-theme="solarpunk"] #tabrail::after,
