@@ -802,7 +802,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROUTINES_META = os.path.join(HERE, "routines-meta")   # Console-owned schedule state
 LAUNCH_AGENTS = os.path.expanduser("~/Library/LaunchAgents")
 RUNNER = os.path.join(HERE, "run-routine.sh")
-ROUTINE_LOG = os.path.join(HERE, "routine-runs.log")
+# Keep the routine log OUTSIDE ~/Documents. Documents is TCC-protected, and a
+# file created there by the Console app (Python, with the app's own TCC grant)
+# gets a com.apple.macl that excludes standalone launchd `bash`. launchd then
+# can't open it as StandardOutPath and every routine dies with EX_CONFIG(78)
+# before its program runs. ~/Library/Logs is not TCC-gated, so both the app and
+# launchd can write it freely. (Diagnosed 2026-06-26.)
+ROUTINE_LOG = os.path.expanduser("~/Library/Logs/mist-routines.log")
+os.makedirs(os.path.dirname(ROUTINE_LOG), exist_ok=True)
 LABEL_PREFIX = "com.mist.routine."
 
 
