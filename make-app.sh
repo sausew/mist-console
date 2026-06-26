@@ -1,6 +1,16 @@
 #!/bin/zsh
-# Build (or rebuild) "MIST Console.app" — a double-clickable launcher that runs
-# desktop.py (Flask + native WKWebView) via uv. Idempotent.
+# Build (or rebuild) "MIST Console.app" — a double-clickable launcher for
+# desktop.py (Flask + native WKWebView). Idempotent.
+#
+# Dock-icon correctness (the reason this is more than a one-line `uv run` shim):
+# macOS ties a Dock tile to the running process's executable. `uv run` spawns a
+# CHILD python (the uv-cache python3.13), a brand-new PID that is NOT the bundle,
+# so the tile bound to ".../uv/.../python3.13". Keeping that in the Dock / quitting
+# left a tile pointing at a bare binary -> "There is no application set to open the
+# document python3.13". The fix proven by experiment: ship the interpreter INSIDE
+# the bundle and `exec` it IN PLACE from Contents/MacOS/launch (CFBundleExecutable).
+# exec keeps the same PID the bundle was launched as, so LaunchServices records
+# bundle path = MIST Console.app. desktop.py stays a plain editable script.
 set -e
 
 PROJ="/Users/alexhedtke/Documents/mist-console"
@@ -11,17 +21,30 @@ echo "Building $APP ..."
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
+# --- bundle a self-contained CPython (so the GUI process lives in the .app) ----
+# Copy the uv-managed standalone interpreter tree (relocatable; loads its dylib +
+# stdlib via @executable_path/../lib, so it works at any path incl. one w/ spaces).
+PYBASE="$(dirname "$(dirname "$(uv python find 3.13)")")"
+# `uv python find` can resolve to an ephemeral venv; walk to the real standalone.
+case "$PYBASE" in
+  *"/uv/python/"*) ;;                                  # already the standalone
+  *) PYBASE="$(/bin/ls -d /Users/alexhedtke/.local/share/uv/python/cpython-3.13* 2>/dev/null | sort | tail -1)" ;;
+esac
+echo "  bundling python from: $PYBASE"
+cp -R "$PYBASE" "$APP/Contents/Resources/python"
+BUNDLE_PY="$APP/Contents/Resources/python/bin/python3.13"
+echo "  installing deps (flask pywebview setproctitle) into the bundle ..."
+"$BUNDLE_PY" -m pip install -q --disable-pip-version-check --break-system-packages \
+  flask pywebview setproctitle >/dev/null
+
 cat > "$APP/Contents/MacOS/launch" <<EOF
 #!/bin/zsh
+# exec the in-bundle python IN PLACE (same PID as the bundle launch) so the Dock
+# tile stays "MIST Console.app", never the bare interpreter. Do NOT use uv run here
+# (it forks a child PID and re-breaks the Dock association).
+HERE="\${0:A:h}"
 cd "$PROJ" || exit 1
-export PATH="/Users/alexhedtke/.local/bin:/opt/homebrew/bin:/usr/local/bin:\$PATH"
-# uv run spawns a CHILD python (the uv-cache python3.13) that owns the GUI/Dock
-# tile. Without this, macOS ties the running tile to that bare binary's path, so
-# "Keep in Dock" / a quit leaves a tile pointing at python3.13 -> "no application
-# set to open the document python3.13". Pinning the bundle id makes the running
-# python coalesce onto THIS .app's Dock tile, so the tile stays the bundle.
-export __CFBundleIdentifier="com.exobrain.mist-console"
-exec uv run --script desktop.py >> "$PROJ/desktop.log" 2>&1
+exec "\$HERE/../Resources/python/bin/python3.13" desktop.py >> "$PROJ/desktop.log" 2>&1
 EOF
 chmod +x "$APP/Contents/MacOS/launch"
 

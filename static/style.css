@@ -376,7 +376,8 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 .slash-item.sel { background: #102536; }
 .slash-name { color: var(--teal); font-weight: 700; }
 #input {
-  flex: 1; resize: none; max-height: 200px;
+  flex: 1; resize: none; max-height: 200px; overflow-y: hidden;
+  box-sizing: border-box;
   background: #0b1722; color: var(--text); border: 1px solid var(--line);
   font-family: var(--mono); font-size: 13px; padding: 9px 11px; outline: none;
 }
