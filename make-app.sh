@@ -15,6 +15,12 @@ cat > "$APP/Contents/MacOS/launch" <<EOF
 #!/bin/zsh
 cd "$PROJ" || exit 1
 export PATH="/Users/alexhedtke/.local/bin:/opt/homebrew/bin:/usr/local/bin:\$PATH"
+# uv run spawns a CHILD python (the uv-cache python3.13) that owns the GUI/Dock
+# tile. Without this, macOS ties the running tile to that bare binary's path, so
+# "Keep in Dock" / a quit leaves a tile pointing at python3.13 -> "no application
+# set to open the document python3.13". Pinning the bundle id makes the running
+# python coalesce onto THIS .app's Dock tile, so the tile stays the bundle.
+export __CFBundleIdentifier="com.exobrain.mist-console"
 exec uv run --script desktop.py >> "$PROJ/desktop.log" 2>&1
 EOF
 chmod +x "$APP/Contents/MacOS/launch"
