@@ -6,6 +6,13 @@
 # SKILL.md body to `claude` headless in the harness cwd (so CLAUDE.md + the
 # MIST persona auto-load).
 set -e
+# launchd LaunchAgents set HOME but NOT USER. The macOS login Keychain lookup
+# that `claude` uses to read its OAuth credential requires USER to be set, or it
+# reports "Not logged in" and exits EX_CONFIG (78). Restore it so headless runs
+# under launchd can authenticate. (Regression surfaced after the 2026-06-23 CC
+# upgrade; every scheduled routine was silently dying with 78.)
+export USER="${USER:-$(id -un)}"
+export LOGNAME="${LOGNAME:-$USER}"
 DIR="$1"
 [ -n "$DIR" ] || { echo "usage: run-routine.sh <routine-dir>"; exit 2; }
 SK="$HOME/.claude/scheduled-tasks/$DIR/SKILL.md"
