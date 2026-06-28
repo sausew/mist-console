@@ -771,6 +771,9 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
 .genimg-dl:hover { background: var(--hover); }
 .genimg-dl:focus-visible { opacity: 1; outline: 1px solid var(--focus); }
 .genimg-dl svg { width: 16px; height: 16px; display: block; }
+/* Confirmation flash after a one-click save to ~/Downloads. */
+.genimg-dl.saved { opacity: 1; color: var(--ok); border-color: var(--ok); }
+.genimg-dl.save-err { opacity: 1; color: var(--err); border-color: var(--err); }
 /* Full-size preview overlay. */
 .lightbox {
   position: fixed; inset: 0; z-index: 9000;

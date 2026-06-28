@@ -16,6 +16,7 @@ import logging
 import os
 import random
 import re
+import shutil
 import subprocess
 import threading
 import time
@@ -320,18 +321,43 @@ _IMG_ROOTS = [os.path.realpath(os.path.expanduser(p)) for p in (
     "~/Downloads", "~/Exobrain/Attachments", "~/Documents/Exobrain harness")]
 
 
+def _safe_image_path(raw):
+    """Resolve `raw` to a real image file under the allowlist, or None."""
+    path = os.path.realpath(os.path.expanduser(raw or ""))
+    under = any(path == r or path.startswith(r + os.sep) for r in _IMG_ROOTS)
+    if (under and os.path.splitext(path)[1].lower() in _IMG_EXTS
+            and os.path.isfile(path)):
+        return path
+    return None
+
+
 @app.route("/file")
 def serve_local_file():
-    raw = request.args.get("path", "")
-    path = os.path.realpath(os.path.expanduser(raw))
-    under = any(path == r or path.startswith(r + os.sep) for r in _IMG_ROOTS)
-    if (not under
-            or os.path.splitext(path)[1].lower() not in _IMG_EXTS
-            or not os.path.isfile(path)):
+    path = _safe_image_path(request.args.get("path", ""))
+    if not path:
         abort(404)
     return send_file(path,
                      as_attachment=(request.args.get("download") == "1"),
                      download_name=os.path.basename(path))
+
+
+@app.route("/save-to-downloads", methods=["POST"])
+def save_to_downloads():
+    # Copy a gallery image into ~/Downloads (deduping the name) so Alex can save
+    # a keeper in one click without a browser round-trip. Same allowlist as /file.
+    path = _safe_image_path((request.get_json(silent=True) or {}).get("path", ""))
+    if not path:
+        abort(404)
+    downloads = os.path.expanduser("~/Downloads")
+    os.makedirs(downloads, exist_ok=True)
+    stem, ext = os.path.splitext(os.path.basename(path))
+    dest = os.path.join(downloads, stem + ext)
+    i = 1
+    while os.path.exists(dest):
+        dest = os.path.join(downloads, f"{stem} ({i}){ext}")
+        i += 1
+    shutil.copy2(path, dest)
+    return jsonify({"ok": True, "name": os.path.basename(dest)})
 
 
 @app.route("/quickbox.html")
