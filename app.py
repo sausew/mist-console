@@ -20,7 +20,7 @@ import subprocess
 import threading
 import time
 
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_file, send_from_directory
 
 import quickaccess
 from bridge import (ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH,
@@ -310,6 +310,28 @@ def index():
         return Response(html, mimetype="text/html")
     except Exception:
         return send_from_directory("static", "index.html")
+
+
+# Serve a local image file inline so generated images (mist-image -> ~/Downloads)
+# can render in the chat. Locked to image extensions under a small allowlist of
+# roots so a stray ?path= can't read arbitrary files. ?download=1 forces a save.
+_IMG_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+_IMG_ROOTS = [os.path.realpath(os.path.expanduser(p)) for p in (
+    "~/Downloads", "~/Exobrain/Attachments", "~/Documents/Exobrain harness")]
+
+
+@app.route("/file")
+def serve_local_file():
+    raw = request.args.get("path", "")
+    path = os.path.realpath(os.path.expanduser(raw))
+    under = any(path == r or path.startswith(r + os.sep) for r in _IMG_ROOTS)
+    if (not under
+            or os.path.splitext(path)[1].lower() not in _IMG_EXTS
+            or not os.path.isfile(path)):
+        abort(404)
+    return send_file(path,
+                     as_attachment=(request.args.get("download") == "1"),
+                     download_name=os.path.basename(path))
 
 
 @app.route("/quickbox.html")

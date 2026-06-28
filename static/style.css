@@ -748,3 +748,29 @@ html[data-theme="solarpunk"] .tab .tpin.on {
 }
 /* the "pinned" section-header pin is gold too (matches the pinned-tab pin) */
 html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
+
+/* ---------- generated images (mist-image) ---------- */
+/* Inline thumbnail in chat: flat, square, hairline border, click to enlarge. */
+.imglink { display: inline-block; line-height: 0; border: none; text-decoration: none; }
+.genimg {
+  display: block; max-width: min(360px, 100%); max-height: 360px; width: auto;
+  border: 1px solid var(--line); background: var(--surface);
+  cursor: zoom-in; margin: 6px 0;
+}
+/* Full-size preview overlay. */
+.lightbox {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0, 0, 0, 0.86);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; gap: 12px;
+}
+.lightbox-img {
+  max-width: 95vw; max-height: 86vh; width: auto; height: auto;
+  object-fit: contain; border: 1px solid var(--line); cursor: zoom-out;
+}
+.lightbox-bar { display: flex; gap: 8px; }
+.lightbox-btn {
+  font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); padding: 6px 16px; cursor: pointer;
+}
+.lightbox-btn:hover { background: var(--hover); }
