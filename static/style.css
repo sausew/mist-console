@@ -752,11 +752,25 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
 /* ---------- generated images (mist-image) ---------- */
 /* Inline thumbnail in chat: flat, square, hairline border, click to enlarge. */
 .imglink { display: inline-block; line-height: 0; border: none; text-decoration: none; }
+.genimg-wrap { position: relative; display: inline-block; line-height: 0; margin: 6px 0; }
 .genimg {
   display: block; max-width: min(360px, 100%); max-height: 360px; width: auto;
   border: 1px solid var(--line); background: var(--surface);
-  cursor: zoom-in; margin: 6px 0;
+  cursor: zoom-in;
 }
+/* Direct-download button in the image corner — saves without opening lightbox. */
+.genimg-dl {
+  position: absolute; top: 7px; right: 7px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); cursor: pointer;
+  opacity: 0.85; transition: opacity 0.12s, background 0.12s;
+}
+.genimg-wrap:hover .genimg-dl { opacity: 1; }
+.genimg-dl:hover { background: var(--hover); }
+.genimg-dl:focus-visible { opacity: 1; outline: 1px solid var(--focus); }
+.genimg-dl svg { width: 16px; height: 16px; display: block; }
 /* Full-size preview overlay. */
 .lightbox {
   position: fixed; inset: 0; z-index: 9000;
