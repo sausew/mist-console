@@ -317,7 +317,6 @@ def index():
 # roots so a stray ?path= can't read arbitrary files. ?download=1 forces a save.
 _IMG_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 _IMG_ROOTS = [os.path.realpath(os.path.expanduser(p)) for p in (
-    "~/Documents/mist-console/data/generated-images",  # mist-image gallery (default)
     "~/Downloads", "~/Exobrain/Attachments", "~/Documents/Exobrain harness")]
 
 
