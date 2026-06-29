@@ -296,6 +296,12 @@ _default_model = ""
 _default_perm = ""   # "" -> ClaudeSession falls back to DEFAULT_PERMISSION_MODE
 _theme = _load_theme()
 
+# When a clickable notification is opened (e.g. a briefing/triage banner with a
+# "console:<sid>" link), mist-notify hits /focus?sid=<sid> just before raising
+# the app. We stash the request here; the front-end claims it on its next window
+# focus and switches to that chat. One-shot: peeking clears it.
+_pending_focus = None
+
 
 # ---- routes ------------------------------------------------------------------
 @app.route("/")
@@ -409,6 +415,25 @@ def close_session(sid):
         s.delete_data()
     _save_meta()
     return jsonify({"ok": True})
+
+
+@app.route("/focus")
+def set_focus():
+    # Notification-click handoff: remember which chat to surface. Only honor a
+    # sid we actually have, so a stale/headless sid just no-ops (app still raises
+    # to the current chat). No sid -> clear any pending request.
+    global _pending_focus
+    sid = request.args.get("sid") or ""
+    _pending_focus = sid if sid in _sessions else None
+    return jsonify({"ok": True, "pending": _pending_focus or ""})
+
+
+@app.route("/focus/peek")
+def peek_focus():
+    # Front-end claims the pending focus on window focus; reading clears it.
+    global _pending_focus
+    sid, _pending_focus = _pending_focus, None
+    return jsonify({"sid": sid or ""})
 
 
 @app.route("/config")
