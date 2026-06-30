@@ -12,6 +12,7 @@ gold `#B8901F`). Originals are line art (black) on transparent backgrounds.
 | `an-tulip.svg` | "Art Nouveau tulip ornament" (*Il progresso fotografico*, 1908) | Wikimedia Commons | Public domain | Slender column down the rail / chat seam |
 | `an-headpiece.svg` | "Art Nouveau headpiece, 1904" (French art book) | Wikimedia Commons | Public domain | Centered divider above the composer and below the top bar |
 | `an-flourish.svg` | "Art Nouveau flourish" (*Annuaire graphique*, 1909) | Wikimedia Commons | Public domain | Gilded sprays on the quick-access summon box corners |
+| `riom-lilies.png` | Georges Riom, Art Nouveau lily wallpaper/textile design panel (sage green ground, white lilies) | period decorative-arts plate | Public domain (author d. pre-1955; design pre-1920s) | Faint full-app ambient wallpaper behind the whole window (all themes) |
 
 Source URLs (Wikimedia `upload.wikimedia.org` direct files):
 - Venetian: `commons/e/ec/William_Morris_-_tilable_vectorized_Venetian.svg`

@@ -26,6 +26,21 @@ html, body {
 }
 body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
 
+/* ---- app wallpaper ----
+   Georges Riom Art Nouveau lily collage, sitting as a faint ambient layer behind
+   the whole window. It paints above body's solid --bg but below all content
+   (negative z-index child), so it ghosts through the transparent chat area while
+   the solid top bar / rail / composer cover it. Opacity is the knob: nudge
+   --wp-opacity up for a bolder wallpaper, down to fade it back. See ART-CREDITS.md. */
+:root { --wp-opacity: .14; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url("riom-lilies.png") center / cover no-repeat;
+  opacity: var(--wp-opacity);
+}
+/* the light cream solarpunk theme reads the sage lilies more strongly, so ease it back */
+html[data-theme="solarpunk"] { --wp-opacity: .10; }
+
 /* ---- top bar ---- */
 #topbar {
   display: flex; align-items: center; gap: 14px;
