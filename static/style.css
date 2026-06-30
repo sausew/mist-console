@@ -32,15 +32,29 @@ body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
    (negative z-index child), so it ghosts through the transparent chat area while
    the solid top bar / rail / composer cover it. Opacity is the knob: nudge
    --wp-opacity up for a bolder wallpaper, down to fade it back. See ART-CREDITS.md. */
-:root { --wp-opacity: .20; }
+:root {
+  --wp-opacity: .20; --wp-blend: normal;
+  --wp-size: cover; --wp-repeat: no-repeat; --wp-pos: center;
+}
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: url("riom-lilies.png") center / cover no-repeat;
+  background-image: url("riom-lilies.png");
+  background-size: var(--wp-size);
+  background-repeat: var(--wp-repeat);
+  background-position: var(--wp-pos);
   opacity: var(--wp-opacity);
+  mix-blend-mode: var(--wp-blend);
 }
-/* the cream solarpunk theme already lives in the lilies' sage palette, so it can
-   carry the wallpaper a touch bolder without fighting the text */
-html[data-theme="solarpunk"] { --wp-opacity: .50; }
+/* Dark themes show the whole collage as one centered composition — the pale
+   lilies glow against the night ground. The cream solarpunk theme can't do that:
+   a `cover` crop parks the near-white lily blooms over the reading area, and you
+   can't darken white onto cream. So on cream we tile the panel into a repeating
+   green lattice and `multiply` it onto the paper like printed ink — the foliage
+   and borders read clearly while the whites stay light. */
+html[data-theme="solarpunk"] {
+  --wp-opacity: .55; --wp-blend: multiply;
+  --wp-size: 820px auto; --wp-repeat: repeat; --wp-pos: top left;
+}
 
 /* ---- top bar ---- */
 #topbar {
