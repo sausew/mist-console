@@ -32,14 +32,15 @@ body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
    (negative z-index child), so it ghosts through the transparent chat area while
    the solid top bar / rail / composer cover it. Opacity is the knob: nudge
    --wp-opacity up for a bolder wallpaper, down to fade it back. See ART-CREDITS.md. */
-:root { --wp-opacity: .14; }
+:root { --wp-opacity: .20; }
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: url("riom-lilies.png") center / cover no-repeat;
   opacity: var(--wp-opacity);
 }
-/* the light cream solarpunk theme reads the sage lilies more strongly, so ease it back */
-html[data-theme="solarpunk"] { --wp-opacity: .10; }
+/* the cream solarpunk theme already lives in the lilies' sage palette, so it can
+   carry the wallpaper a touch bolder without fighting the text */
+html[data-theme="solarpunk"] { --wp-opacity: .50; }
 
 /* ---- top bar ---- */
 #topbar {
