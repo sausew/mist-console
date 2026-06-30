@@ -342,10 +342,66 @@ def _safe_image_path(raw):
 # feeds Claude also renders as the bubble thumbnail. Keeps Downloads clean.
 _PASTE_DIR = os.path.join(HARNESS, "tmp", "images")
 _DATAURL_RE = re.compile(r"^data:image/(png|jpe?g|gif|webp);base64,(.+)$", re.I | re.S)
+# Anthropic's vision API rejects images over 5 MB each, so that's the hard ceiling
+# we keep everything under. Originals already below it pass through untouched at
+# full resolution; only oversized ones get downscaled/re-encoded to fit.
+_IMG_LIMIT = 5 * 1024 * 1024
+# Don't even attempt to decode/re-encode an absurdly large payload — this is an
+# 8 GB machine and a single huge image in RAM can hurt. (~64 MB raw bytes.)
+_IMG_DECODE_MAX = 64 * 1024 * 1024
+
+
+def _fit_image(raw, ext, limit):
+    """Return (bytes, ext) for an image guaranteed at or under `limit`. Under the
+    limit it passes through untouched (full resolution). Over it, cap the long edge
+    at 1568px (what the API downscales to anyway, so it's free), then keep
+    re-encoding until it fits. (None, None) if it can't be loaded/shrunk."""
+    if len(raw) <= limit:
+        return raw, ext
+    try:
+        import io
+        from PIL import Image
+    except Exception:
+        return None, None   # no Pillow: refuse rather than send an over-limit image
+    try:
+        img = Image.open(io.BytesIO(raw))
+        img.load()
+    except Exception:
+        return None, None
+    # Alpha (screenshots, logos) must stay PNG; everything else re-encodes as JPEG,
+    # which is far smaller for photographs.
+    has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
+    if has_alpha:
+        img = img.convert("RGBA")
+        out_ext, fmt, save_kw = "png", "PNG", {"optimize": True}
+    else:
+        img = img.convert("RGB")
+        out_ext, fmt, save_kw = "jpeg", "JPEG", {"quality": 85, "optimize": True}
+    long_edge = 1568
+    data = raw
+    for _ in range(12):
+        w, h = img.size
+        if max(w, h) > long_edge:
+            scale = long_edge / max(w, h)
+            img = img.resize((max(1, int(w * scale)), max(1, int(h * scale))), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format=fmt, **save_kw)
+        data = buf.getvalue()
+        if len(data) <= limit:
+            return data, out_ext
+        # Still too big: drop JPEG quality, or shrink the PNG target further.
+        if fmt == "JPEG" and save_kw["quality"] > 40:
+            save_kw["quality"] -= 15
+        else:
+            long_edge = int(long_edge * 0.8)
+            if long_edge < 200:
+                return data, out_ext   # smallest we'll reasonably go; ship it
+    return data, out_ext
 
 
 def _save_pasted_image(data_url):
-    """Decode a `data:image/...;base64,...` URL to a file under tmp/images. None on miss."""
+    """Decode a `data:image/...;base64,...` URL to a file under tmp/images,
+    downscaling to stay under the 5 MB API ceiling. None on miss."""
     m = _DATAURL_RE.match((data_url or "").strip())
     if not m:
         return None
@@ -357,7 +413,10 @@ def _save_pasted_image(data_url):
         raw = base64.b64decode(m.group(2))
     except Exception:
         return None
-    if not raw or len(raw) > 25 * 1024 * 1024:   # sanity cap: 25 MB
+    if not raw or len(raw) > _IMG_DECODE_MAX:
+        return None
+    raw, ext = _fit_image(raw, ext, _IMG_LIMIT)
+    if not raw:
         return None
     os.makedirs(_PASTE_DIR, exist_ok=True)
     name = f"paste-{int(time.time() * 1000)}-{random.randrange(1 << 24):06x}.{ext}"

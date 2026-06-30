@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["flask", "pywebview", "setproctitle"]
+# dependencies = ["flask", "pywebview", "setproctitle", "pillow"]
 # ///
 """
 desktop.py — native macOS window (WKWebView via pywebview) hosting the MIST
