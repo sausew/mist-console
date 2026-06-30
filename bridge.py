@@ -12,6 +12,8 @@ import queue
 import subprocess
 import threading
 import time
+import urllib.error
+import urllib.request
 
 HARNESS = "/Users/alexhedtke/Documents/Exobrain harness"
 CLAUDE = os.path.expanduser("~/.npm-global/bin/claude")
@@ -105,6 +107,99 @@ def record_rate_limit(info):
             os.replace(tmp, RATE_LIVE_PATH)
         except Exception:
             pass
+    # A rate_limit_event means a real turn just ran, so the 5h/7d windows are
+    # ACTIVE right now — the one safe moment to read the live utilization %.
+    maybe_probe_rate_util()
+
+
+# Live utilization %, probed from the subscription's own rate-limit response
+# headers. WHY a separate probe: the headless stream's rate_limit_event carries
+# resets_at + status but NOT the %, and ~/.claude/usage-cache.json (the only
+# other source of the %) is refreshed solely by the interactive CLI statusline,
+# so during Console-only use it goes stale for days. An OAuth-authenticated
+# /v1/messages call returns anthropic-ratelimit-unified-{5h,7d}-utilization in
+# its response headers — the authoritative live number — using Claude Code's own
+# subscription token (no API key, no scraping). /usage merges this in.
+#
+# We probe ONLY from record_rate_limit (i.e. just after a real turn), never on a
+# timer: the 5h window is anchored to your first message and rolls 5h from there,
+# so a probe fired while idle would START a fresh window just to measure it. Tied
+# to a real turn, the window is already open — the probe is one tiny request
+# inside it and does not move the reset (which is anchored to the window start).
+RATE_UTIL_PATH = os.path.join(DATA_DIR, "rate-util.json")
+_PROBE_MIN_INTERVAL = 300          # seconds between probes during continuous use
+_probe_state = {"last_ts": 0.0}
+_probe_state_lock = threading.Lock()
+
+
+def _read_oauth_token():
+    """Claude Code's subscription OAuth access token, read fresh from Keychain
+    (Claude Code keeps it refreshed; reading per-probe means we always get a
+    current token, or None if absent/locked)."""
+    try:
+        out = subprocess.run(
+            ["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+            capture_output=True, text=True, timeout=5)
+        if out.returncode != 0:
+            return None
+        return (json.loads(out.stdout).get("claudeAiOauth") or {}).get("accessToken")
+    except Exception:
+        return None
+
+
+def _probe_rate_util():
+    """One minimal OAuth-authenticated request; persist the unified utilization
+    headers per window. Silent no-op on any failure (expired token, offline) so
+    the badge falls back to the live reset countdown."""
+    token = _read_oauth_token()
+    if not token:
+        return
+    body = json.dumps({"model": "claude-haiku-4-5", "max_tokens": 1,
+                       "messages": [{"role": "user", "content": "hi"}]}).encode()
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages", data=body, method="POST",
+        headers={"Authorization": "Bearer " + token,
+                 "anthropic-version": "2023-06-01",
+                 "anthropic-beta": "oauth-2025-04-20",
+                 "content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            hdrs = resp.headers
+    except Exception:
+        return
+    rec, now = {}, int(time.time())
+    for win, tag in (("five_hour", "5h"), ("seven_day", "7d")):
+        util = hdrs.get("anthropic-ratelimit-unified-%s-utilization" % tag)
+        if util is None:
+            continue
+        reset = hdrs.get("anthropic-ratelimit-unified-%s-reset" % tag)
+        try:
+            rec[win] = {"utilization": float(util),
+                        "resets_at": int(reset) if reset else None,
+                        "status": hdrs.get("anthropic-ratelimit-unified-%s-status" % tag),
+                        "ts": now}
+        except (TypeError, ValueError):
+            continue
+    if not rec:
+        return
+    tmp = RATE_UTIL_PATH + ".tmp.%d" % os.getpid()
+    try:
+        with open(tmp, "w") as f:
+            json.dump(rec, f)
+        os.replace(tmp, RATE_UTIL_PATH)
+    except Exception:
+        pass
+
+
+def maybe_probe_rate_util():
+    """Throttled, non-blocking trigger. Caller guarantees an active window."""
+    with _probe_state_lock:
+        now = time.time()
+        if now - _probe_state["last_ts"] < _PROBE_MIN_INTERVAL:
+            return
+        _probe_state["last_ts"] = now
+    threading.Thread(target=_probe_rate_util, daemon=True).start()
+
 
 # Scoped to Console sessions only (see _build_cmd). Keeps MIST from speaking
 # aloud in a text chat; voice stays enabled everywhere else.

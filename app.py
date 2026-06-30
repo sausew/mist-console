@@ -25,7 +25,7 @@ from flask import Flask, Response, abort, jsonify, request, send_file, send_from
 
 import quickaccess
 from bridge import (ClaudeSession, DATA_DIR, HARNESS, RATE_LIVE_PATH,
-                    DEFAULT_PERMISSION_MODE, IDLE_REAP_SEC)
+                    RATE_UTIL_PATH, DEFAULT_PERMISSION_MODE, IDLE_REAP_SEC)
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
@@ -799,11 +799,15 @@ def quick_access_set():
 
 @app.route("/usage")
 def usage():
-    # Two sources, merged: the % comes from the interactive-CLI statusline cache
-    # (USAGE_CACHE, often stale during Console-only use), while the live reset
-    # time + status come from each Console turn's rate_limit_event (RATE_LIVE_PATH).
-    # Merging keeps the 5h/7d badges fresh — and non-blank — even when the cache
-    # isn't moving. See bridge.record_rate_limit / RATE_LIVE_PATH.
+    # Three sources, merged in order of authority:
+    #   1. RATE_UTIL_PATH — the LIVE utilization %, probed from the subscription's
+    #      own rate-limit response headers just after a real turn (the only fresh
+    #      source of the % during Console-only use). See bridge._probe_rate_util.
+    #   2. RATE_LIVE_PATH — reset time + status from each turn's rate_limit_event
+    #      (always fresh; carries no %). Fallback for reset/status if no probe yet.
+    #   3. USAGE_CACHE — the interactive-CLI statusline cache; its % is often days
+    #      stale during Console-only use. Last-resort %, dropped once its window
+    #      has rolled.
     cache, age = {}, None
     try:
         with open(USAGE_CACHE) as f:
@@ -816,6 +820,11 @@ def usage():
             live = json.load(f) or {}
     except Exception:
         live = {}
+    try:
+        with open(RATE_UTIL_PATH) as f:
+            util = json.load(f) or {}
+    except Exception:
+        util = {}
 
     rl = cache.get("rate_limits", {}) or {}
     cw = cache.get("context_window", {}) or {}
@@ -823,21 +832,33 @@ def usage():
     def lim(k):
         x = rl.get(k) or {}
         pct = x.get("used_percentage")
+        pct_source = "cache" if pct is not None else None
+        pct_age = age
         resets_at = x.get("resets_at")
         status = None
         lv = live.get(k) or {}
         lr = lv.get("resets_at")
         if lr:
             # A live reset time LATER than the cached one means the window has
-            # rolled over, so the cached % belongs to an expired window — drop it
-            # (we don't have the new %; show the reset countdown instead of a lie).
+            # rolled over, so the cached % belongs to an expired window — drop it.
             if resets_at and lr > resets_at:
-                pct = None
+                pct, pct_source = None, None
             resets_at = lr
             status = lv.get("status")
-        return {"used_percentage": pct, "resets_at": resets_at, "status": status}
+        # The probed % is authoritative and live — it overrides the stale cache %.
+        uv = util.get(k) or {}
+        u = uv.get("utilization")
+        if u is not None:
+            pct = round(u * 100)
+            pct_source = "probe"
+            pct_age = int(time.time() - uv.get("ts", time.time()))
+            if uv.get("resets_at"):
+                resets_at = uv["resets_at"]
+            status = uv.get("status") or status
+        return {"used_percentage": pct, "resets_at": resets_at, "status": status,
+                "pct_source": pct_source, "pct_age_seconds": pct_age}
 
-    return jsonify({"available": bool(rl or live),
+    return jsonify({"available": bool(rl or live or util),
                     "five_hour": lim("five_hour"), "seven_day": lim("seven_day"),
                     "context_window_pct": cw.get("used_percentage"),
                     "age_seconds": age})
