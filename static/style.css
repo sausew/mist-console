@@ -660,7 +660,6 @@ html[data-theme="solarpunk"] #composer > * { position: relative; z-index: 1; }
    in-flow flex item that balloons the composer row and warps the whole UI. */
 html[data-theme="solarpunk"] #slashMenu { position: absolute; z-index: 40; }
 html[data-theme="solarpunk"] #logs::before,
-html[data-theme="solarpunk"] #logs::after,
 html[data-theme="solarpunk"] #tabrail::after,
 html[data-theme="solarpunk"] #composer::before,
 html[data-theme="solarpunk"] #topbar::after {
@@ -676,19 +675,9 @@ html[data-theme="solarpunk"] #logs::before {
   background-image: url("an-corner.svg"); background-size: contain; background-position: top left;
   transform: scaleY(-1); transform-origin: top left; opacity: .5;
 }
-/* faint William Morris "Venetian" wallpaper filling the empty space to the RIGHT
-   of the conversation. It covers the whole log area and tiles seamlessly; a
-   horizontal mask keeps it clear of the text column (~900px wide) and fades it in
-   toward the right edge — so it fills whatever empty width the window has at any
-   size and never ends on a hard vertical edge. */
-html[data-theme="solarpunk"] #logs::after {
-  top: 0; right: 0; bottom: 0; left: 0; width: auto; height: auto;
-  background-image: url("morris-venetian.svg");
-  background-repeat: repeat; background-size: 190px auto; background-position: top right;
-  opacity: .14;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, transparent 900px, #000 1010px, #000 100%);
-          mask-image: linear-gradient(to right, transparent 0, transparent 900px, #000 1010px, #000 100%);
-}
+/* (The William Morris "Venetian" band that used to tile down the chat's right
+   column was removed — the Georges Riom lily wallpaper behind the whole app now
+   fills that role. morris-venetian.svg is kept in static/ for reference.) */
 /* slender Art Nouveau tulip column running down the rail / chat seam —
    fade both ends so it never looks chopped */
 html[data-theme="solarpunk"] #tabrail::after {

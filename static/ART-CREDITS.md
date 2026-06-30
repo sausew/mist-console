@@ -7,7 +7,7 @@ gold `#B8901F`). Originals are line art (black) on transparent backgrounds.
 
 | File | Source work | Origin | License | Used for |
 |---|---|---|---|---|
-| `morris-venetian.svg` | William Morris, "Venetian" (tilable vectorization of a Morris & Co. design) | Wikimedia Commons | Public domain | Faint wallpaper band down the chat's right column |
+| `morris-venetian.svg` | William Morris, "Venetian" (tilable vectorization of a Morris & Co. design) | Wikimedia Commons | Public domain | _Retired_ — formerly the faint band down the chat's right column; superseded by the Riom lily wallpaper. Kept for reference. |
 | `an-corner.svg` | "Corner Ornament Black Down Left" (antique botanical corner, from metal typeset ornaments) | Wikimedia Commons | CC0 1.0 | Top-left corner bracket framing the conversation |
 | `an-tulip.svg` | "Art Nouveau tulip ornament" (*Il progresso fotografico*, 1908) | Wikimedia Commons | Public domain | Slender column down the rail / chat seam |
 | `an-headpiece.svg` | "Art Nouveau headpiece, 1904" (French art book) | Wikimedia Commons | Public domain | Centered divider above the composer and below the top bar |
