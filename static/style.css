@@ -60,6 +60,16 @@ html[data-theme="solarpunk"] {
   --wp-opacity: .55; --wp-blend: multiply;
   --wp-size: 660px auto; --wp-repeat: repeat; --wp-pos: top left;
 }
+/* Readability mask (cream theme only): the messages are left-aligned in a ~900px
+   column, so fade the wallpaper down to ~30% behind that column and let it run at
+   full strength out in the empty right margin. Text then sits on near-clean paper
+   while the lilies stay vivid where there's nothing to read. The partial-alpha
+   stops (rgba …,.30) dim rather than fully clear, so a soft ghost of the pattern
+   still shows behind the text. */
+html[data-theme="solarpunk"] #logs::after {
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,.30) 0, rgba(0,0,0,.30) 820px, #000 1010px, #000 100%);
+          mask-image: linear-gradient(to right, rgba(0,0,0,.30) 0, rgba(0,0,0,.30) 820px, #000 1010px, #000 100%);
+}
 
 /* ---- top bar ---- */
 #topbar {
