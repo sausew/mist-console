@@ -27,17 +27,20 @@ html, body {
 body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
 
 /* ---- app wallpaper ----
-   Georges Riom Art Nouveau lily collage, sitting as a faint ambient layer behind
-   the whole window. It paints above body's solid --bg but below all content
-   (negative z-index child), so it ghosts through the transparent chat area while
-   the solid top bar / rail / composer cover it. Opacity is the knob: nudge
-   --wp-opacity up for a bolder wallpaper, down to fade it back. See ART-CREDITS.md. */
+   Georges Riom Art Nouveau lily collage, painted INTO the conversation area
+   (#logs) rather than behind the whole window. This is the same slot the old
+   Morris band used: the wallpaper sits at z-index:0 and the scrolling messages
+   layer (.session-log) sits at z-index:1 just above it, so the lilies show
+   through the transparent chat while staying behind the text. (A body::before at
+   z-index:-1 looked fine on dark themes but vanished on the cream solarpunk
+   theme, whose opaque body background paints over any negative-z child.)
+   --wp-* are the knobs; each theme tunes size/blend/opacity to its own ground. */
 :root {
-  --wp-opacity: .20; --wp-blend: normal;
+  --wp-opacity: .22; --wp-blend: normal;
   --wp-size: cover; --wp-repeat: no-repeat; --wp-pos: center;
 }
-body::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+#logs::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background-image: url("riom-lilies.png");
   background-size: var(--wp-size);
   background-repeat: var(--wp-repeat);
@@ -45,6 +48,8 @@ body::before {
   opacity: var(--wp-opacity);
   mix-blend-mode: var(--wp-blend);
 }
+/* messages ride above the wallpaper in every theme */
+.session-log { z-index: 1; }
 /* Dark themes show the whole collage as one centered composition — the pale
    lilies glow against the night ground. The cream solarpunk theme can't do that:
    a `cover` crop parks the near-white lily blooms over the reading area, and you
@@ -53,7 +58,7 @@ body::before {
    and borders read clearly while the whites stay light. */
 html[data-theme="solarpunk"] {
   --wp-opacity: .55; --wp-blend: multiply;
-  --wp-size: 820px auto; --wp-repeat: repeat; --wp-pos: top left;
+  --wp-size: 660px auto; --wp-repeat: repeat; --wp-pos: top left;
 }
 
 /* ---- top bar ---- */
