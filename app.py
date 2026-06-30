@@ -337,6 +337,36 @@ def _safe_image_path(raw):
     return None
 
 
+# Pasted/dropped images from the composer land here. tmp/images under the harness
+# root is gitignored and already inside the /file allowlist, so the same path that
+# feeds Claude also renders as the bubble thumbnail. Keeps Downloads clean.
+_PASTE_DIR = os.path.join(HARNESS, "tmp", "images")
+_DATAURL_RE = re.compile(r"^data:image/(png|jpe?g|gif|webp);base64,(.+)$", re.I | re.S)
+
+
+def _save_pasted_image(data_url):
+    """Decode a `data:image/...;base64,...` URL to a file under tmp/images. None on miss."""
+    m = _DATAURL_RE.match((data_url or "").strip())
+    if not m:
+        return None
+    ext = m.group(1).lower()
+    if ext == "jpg":
+        ext = "jpeg"
+    try:
+        import base64
+        raw = base64.b64decode(m.group(2))
+    except Exception:
+        return None
+    if not raw or len(raw) > 25 * 1024 * 1024:   # sanity cap: 25 MB
+        return None
+    os.makedirs(_PASTE_DIR, exist_ok=True)
+    name = f"paste-{int(time.time() * 1000)}-{random.randrange(1 << 24):06x}.{ext}"
+    path = os.path.join(_PASTE_DIR, name)
+    with open(path, "wb") as f:
+        f.write(raw)
+    return path
+
+
 @app.route("/file")
 def serve_local_file():
     path = _safe_image_path(request.args.get("path", ""))
@@ -563,12 +593,15 @@ def send(sid):
     s = _sessions.get(sid)
     if not s:
         return jsonify({"ok": False, "error": "no session"}), 404
-    text = (request.get_json(silent=True) or {}).get("text", "").strip()
-    if not text:
+    body = request.get_json(silent=True) or {}
+    text = (body.get("text") or "").strip()
+    image_path = _save_pasted_image(body.get("image")) if body.get("image") else None
+    if not text and not image_path:
         return jsonify({"ok": False, "error": "empty"}), 400
     # Auth slash commands (/login, /logout, /auth) can't run inside the headless
     # claude process — handle them out of band instead of forwarding to stdin.
-    if s.maybe_auth_command(text):
+    # (An image-only turn is never a command, so skip the check when text is empty.)
+    if text and s.maybe_auth_command(text):
         return jsonify({"ok": True, "auth": True})
     # Context-cost cap: hold the first send into a chat that's past the threshold
     # (a resumed/large conversation re-bills its whole window every turn). The
@@ -576,7 +609,7 @@ def send(sid):
     held = s.context_gate()
     if held:
         return jsonify({"ok": False, "held": True, "pct": s.context_pct, "reason": held})
-    ok = s.send(text)
+    ok = s.send(text, image_path=image_path)
     _save_meta()
     return jsonify({"ok": ok, "title": s.title})
 

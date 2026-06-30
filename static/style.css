@@ -752,6 +752,23 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
 /* ---------- generated images (mist-image) ---------- */
 /* Inline thumbnail in chat: flat, square, hairline border, click to enlarge. */
 .imglink { display: inline-block; line-height: 0; border: none; text-decoration: none; }
+/* composer image attachment: a thumbnail floating above the input row (anchored
+   like the slash menu), plus the bubble image that rides a sent message */
+#attachPreview {
+  position: absolute; left: 14px; bottom: calc(100% + 0px); z-index: 41;
+  display: flex; align-items: flex-start; gap: 6px; padding: 8px;
+  background: #0c1825; border: 1px solid var(--line); border-bottom: 0;
+}
+#attachPreview[hidden] { display: none; }
+.attach-thumb { display: block; max-width: 120px; max-height: 90px; border: 1px solid var(--line); }
+.attach-x {
+  background: #0b1722; color: var(--dim); border: 1px solid var(--line);
+  cursor: pointer; font-size: 11px; line-height: 1; padding: 4px 7px;
+}
+.attach-x:hover { color: var(--text); }
+#composer.drag { outline: 1px dashed var(--teal); outline-offset: -3px; }
+.user-img { margin-top: 6px; }
+
 .genimg-wrap { position: relative; display: inline-block; line-height: 0; margin: 6px 0; }
 .genimg {
   display: block; max-width: min(360px, 100%); max-height: 360px; width: auto;

@@ -482,21 +482,30 @@ class ClaudeSession:
             full = (text + "\n\n" if text else "") + f"[Current page: {url}]"
             display = (text + "\n" if text else "") + f"🔗 {url}"
         content = [{"type": "text", "text": full or "(see attachment)"}]
+        img_for_display = None
         if image_path and os.path.exists(image_path):
             try:
                 import base64
+                ext = os.path.splitext(image_path)[1].lower().lstrip(".")
+                media = {"jpg": "jpeg", "jpeg": "jpeg", "gif": "gif",
+                         "webp": "webp"}.get(ext, "png")
                 with open(image_path, "rb") as f:
                     b64 = base64.b64encode(f.read()).decode()
                 content.append({"type": "image", "source": {
-                    "type": "base64", "media_type": "image/png", "data": b64}})
-                display += "\n📷 [screenshot]"
+                    "type": "base64", "media_type": "image/" + media, "data": b64}})
+                # Hand the front-end the path so it renders an inline thumbnail
+                # (served via /file); falls back to a 📷 marker if it can't.
+                img_for_display = image_path
             except Exception:
                 pass
         if not self.title:
             t = text or "Screenshot" if image_path else (text or url or "New chat")
             self.title = (t[:40] + "…") if len(t) > 40 else t
         self.last_activity = time.time()
-        self._broadcast({"type": "user_text", "text": display})   # for live + replay
+        ev = {"type": "user_text", "text": display}   # for live + replay
+        if img_for_display:
+            ev["image"] = img_for_display
+        self._broadcast(ev)
         msg = {"type": "user", "message": {"role": "user", "content": content}}
         try:
             self.proc.stdin.write(json.dumps(msg) + "\n")
