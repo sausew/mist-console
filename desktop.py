@@ -666,6 +666,23 @@ def _install_edit_menu():
         add("Copy", "copy:", "c")
         add("Paste", "paste:", "v")
         add("Select All", "selectAll:", "a")
+
+        # View menu: Reload (Cmd-R) + Force Reload (Cmd-Shift-R). These route to the
+        # focused WKWebView via the responder chain — WKWebView implements both
+        # reload: and reloadFromOrigin:. Without this, Cmd-R does nothing in the
+        # console, so front-end (CSS/JS) changes can't be picked up without quitting
+        # the whole app. Cmd-R here uses reloadFromOrigin: (ignores the WebKit cache)
+        # so a changed stylesheet actually comes through.
+        view_item = NSMenuItem.alloc().init()
+        mainmenu.addItem_(view_item)
+        view_menu = NSMenu.alloc().initWithTitle_("View")
+        view_item.setSubmenu_(view_menu)
+        view_menu.addItem_(
+            NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Reload", "reloadFromOrigin:", "r"))
+        view_menu.addItem_(
+            NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Force Reload", "reloadFromOrigin:", "R"))
     except Exception as e:  # never block startup on menu setup
         print("edit menu setup skipped:", e)
 
