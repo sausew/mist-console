@@ -571,6 +571,27 @@ def peek_focus():
     return jsonify({"sid": sid or ""})
 
 
+# AirDrop-router claim. The airdrop-to-console watcher asks here which chat an
+# incoming photo should land in. A composer command (/here, /photos) sets it;
+# the watcher reads it and, absent a live claim, falls back to recency then the
+# dedicated photos chat. Time-boxed (5 min) so a stale claim can't grab a much
+# later photo.
+_airdrop_claim = None  # {"target": <sid> | "dedicated", "expires": <epoch>}
+
+
+@app.route("/airdrop-claim", methods=["GET", "POST"])
+def airdrop_claim():
+    global _airdrop_claim
+    if request.method == "POST":
+        target = (request.get_json(silent=True) or {}).get("target")
+        _airdrop_claim = {"target": target, "expires": time.time() + 300} if target else None
+        return jsonify({"ok": True, "claim": _airdrop_claim or {}})
+    if _airdrop_claim and _airdrop_claim["expires"] > time.time():
+        return jsonify(_airdrop_claim)
+    _airdrop_claim = None
+    return jsonify({})
+
+
 @app.route("/config")
 def config():
     return jsonify({"spinner_verbs": SPINNER_VERBS, "models": get_models(),
