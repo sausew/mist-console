@@ -116,7 +116,7 @@ button:hover { border-color: var(--teal); color: var(--teal); }
 #mid { display: flex; min-height: 0; overflow: hidden; }
 #tabrail {
   width: var(--rail-w, 196px); flex: 0 0 var(--rail-w, 196px);
-  border-right: 1px solid var(--line); background: #0c1825;
+  border-right: 1px solid var(--line); background: #0b1826;
   display: flex; flex-direction: column; min-width: 0;
 }
 #railResize {
@@ -127,28 +127,35 @@ button:hover { border-color: var(--teal); color: var(--teal); }
 body.col-resizing { cursor: col-resize; user-select: none; }
 #newTab {
   margin: 8px; border: 1px solid var(--line); color: var(--teal);
-  padding: 6px 8px; text-align: left;
+  padding: 7px 9px; text-align: left; letter-spacing: .3px;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
 }
+/* invert on hover so "+ new chat" reads as a live affordance, not dead chrome */
+#newTab:hover { background: var(--teal); color: var(--bg); border-color: var(--teal); }
 #tabs { overflow-y: auto; flex: 1; }
 .tab {
-  display: flex; align-items: center; gap: 7px;
+  display: flex; align-items: center; gap: 8px;
   padding: 7px 9px; border-bottom: 1px solid var(--line-soft);
+  border-left: 2px solid transparent;   /* constant accent gutter — hover/active recolor it, no layout shift */
   cursor: pointer; color: var(--dim); font-size: 12px;
   user-select: none;   /* so click-drag reordering doesn't select the title text */
+  transition: background .12s ease, color .12s ease, border-left-color .12s ease;
 }
-.tab:hover { background: #0f2030; }
+.tab:hover { background: #102a3e; color: #b3c9db; border-left-color: var(--line); }
 /* lifted, follows the pointer; the no-transition rule keeps it glued to the cursor
    while the OTHER pinned tabs slide out of the way (their transition is set inline) */
 .tab.dragging { opacity: .92; z-index: 10; position: relative;
   box-shadow: 0 4px 14px rgba(0,0,0,.35); cursor: grabbing; }
 body.tab-dragging, body.tab-dragging .tab { cursor: grabbing; }
 .tab.drag-over { box-shadow: inset 0 2px 0 0 var(--teal); }   /* legacy insertion line (unused) */
-.tab.active { background: #102536; color: var(--text); border-left: 2px solid var(--teal); padding-left: 7px; }
+.tab.active { background: #14324c; color: var(--text); border-left-color: var(--teal); }
 .tab .dot { width: 7px; height: 7px; flex: 0 0 7px; background: var(--dim); border-radius: 0; }
 .tab .dot.idle { background: #3a566e; }
-.tab .dot.thinking { background: var(--violet); }
-.tab .dot.working { background: var(--teal); }
+/* thinking/working dots breathe so you can spot which chats are live at a glance */
+.tab .dot.thinking { background: var(--violet); animation: dot-breathe 1.15s ease-in-out infinite; }
+.tab .dot.working { background: var(--teal); animation: dot-breathe 1.15s ease-in-out infinite; }
 .tab .dot.error { background: var(--err); }
+@keyframes dot-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 .tab .ttitle { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tab .trename { flex: 1; min-width: 0; background: #0b1722; border: 1px solid var(--teal);
   color: var(--text); font-family: var(--mono); font-size: 12px; padding: 1px 4px; }
@@ -173,7 +180,7 @@ body.tab-dragging, body.tab-dragging .tab { cursor: grabbing; }
 .tabsection.pinned { color: var(--teal); }
 
 /* pinned conversations get a tinted band + a teal edge so they read as a group */
-.tab.pinned { background: #0e2435; border-left: 2px solid var(--teal); padding-left: 7px; }
+.tab.pinned { background: #0e2435; border-left-color: var(--teal); }
 .tab.pinned:hover { background: #13314a; }
 .tab.pinned.active { background: #16374f; }
 .tab.pinned .tpin { opacity: 1; }
@@ -779,6 +786,62 @@ html[data-theme="solarpunk"] .tab .tpin {
 html[data-theme="solarpunk"] .tab:hover .tpin { border-color: var(--gold); color: var(--teal); }
 html[data-theme="solarpunk"] .tab .tpin.on {
   color: var(--gold); border-color: var(--gold);
+}
+
+/* ---- warmer, more alive rail (the drab beige field, re-lit) ----
+   The rail was a flat wheat column of near-white chips: low contrast, color only
+   on the active tab. Here it catches the same dappled sunlight as the body and
+   every conversation gets a living leaf, so the resting state reads as a sunlit
+   shelf of cards instead of a monotonous beige list. Gradients + soft glows are
+   the solarpunk idiom (the opposite of the terminal theme's flat/sharp rule). */
+html[data-theme="solarpunk"] #tabrail {
+  background:
+    linear-gradient(180deg, rgba(224,177,0,.13), transparent 44%),   /* gold sunlight pools at the top */
+    linear-gradient(0deg,   rgba(91,178,71,.12), transparent 40%),   /* foliage green rises from the floor */
+    var(--surface);
+}
+/* resting chips are warm sunlit paper (not dead white) with a hair more depth */
+html[data-theme="solarpunk"] .tab {
+  background: linear-gradient(180deg, #FFFDF5, #FBF6E7);
+  border-color: #DCD6BC;
+  box-shadow: 0 1px 3px rgba(74,60,30,.10);
+}
+html[data-theme="solarpunk"] .tab:hover {
+  background: linear-gradient(180deg, #FBF4DF, #F3EBCF);
+  border-color: var(--gold);
+  box-shadow: 0 2px 7px rgba(224,177,0,.18);
+}
+/* the current chat looks illuminated — a soft sunbeam glow around the leaf-green
+   selection, keeping the forest-green spine it already had */
+html[data-theme="solarpunk"] .tab.active {
+  background: linear-gradient(180deg, #E4F1D6, #D6E9C4);
+  box-shadow: 0 0 0 1px rgba(47,107,60,.35), 0 3px 12px rgba(224,177,0,.26);
+}
+/* pinned chips get a faint gold wash behind their gold spine so the group glows */
+html[data-theme="solarpunk"] .tab.pinned { background: linear-gradient(180deg, #FBF3DA, #F6EAC8); }
+html[data-theme="solarpunk"] .tab.pinned.active { background: linear-gradient(180deg, #E7F0D2, #D9E8BF); }
+
+/* status dots become little living leaves — tilted, breathing (shared
+   @keyframes dot-breathe), softly glowing. Color still carries meaning:
+   sage = idle, gold = thinking, foliage = working, brick = error. */
+html[data-theme="solarpunk"] .tab .dot {
+  width: 9px; height: 9px; flex-basis: 9px;
+  border-radius: 0 70% 0 70%;          /* leaf silhouette */
+  transform: rotate(-12deg);
+}
+html[data-theme="solarpunk"] .tab .dot.idle { background: #8FB06B; }   /* living sage, not muted */
+html[data-theme="solarpunk"] .tab .dot.thinking { box-shadow: 0 0 6px rgba(224,177,0,.75); }
+html[data-theme="solarpunk"] .tab .dot.working { box-shadow: 0 0 6px rgba(91,178,71,.85); }
+html[data-theme="solarpunk"] .tab .dot.error { background: var(--err); box-shadow: 0 0 6px rgba(181,64,42,.55); }
+
+/* "+ new chat" becomes a gentle sunbeam call-to-action, not another white card */
+html[data-theme="solarpunk"] #newTab {
+  background: linear-gradient(180deg, #FBF1D2, #F4E6BE);
+  border-color: var(--gold); color: #6A5410;
+}
+html[data-theme="solarpunk"] #newTab:hover {
+  background: linear-gradient(180deg, #FBEBBE, #F0DCA6);
+  box-shadow: 0 0 10px rgba(224,177,0,.30);
 }
 /* the "pinned" section-header pin is gold too (matches the pinned-tab pin) */
 html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
