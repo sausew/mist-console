@@ -4,8 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MIST Console</title>
-<!-- Apply the saved theme before CSS paints so switching never flashes. -->
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}</script>
+<!-- Apply the saved theme + font before CSS paints so switching never flashes.
+     __mistFont is replaced server-side (app.py) with the persisted font so a
+     wiped localStorage still paints the right face. localStorage wins if set. -->
+<script>window.__mistFont=null;</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}
+try{var _d=document.documentElement,_fs=localStorage.getItem("fontStack"),_fid=localStorage.getItem("font");
+if(!_fs&&window.__mistFont){_fs=window.__mistFont.stack;_fid=window.__mistFont.id;}
+if(_fs){_d.style.setProperty("--mono",_fs);_d.style.setProperty("--head",_fs);}
+if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -69,6 +76,7 @@
   <div class="capHead">settings <button id="capClose">×</button></div>
   <div class="capBody">
     <h4>theme</h4><div id="themeList"></div>
+    <h4>font</h4><div id="fontList"></div>
     <h4>quick access</h4>
     <div class="qa">
       <div class="qa-row">

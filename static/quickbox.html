@@ -3,8 +3,12 @@
 <head>
 <meta charset="utf-8">
 <title>MIST</title>
-<!-- match the app's chosen theme (shared localStorage; server also injects it). -->
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}</script>
+<!-- match the app's chosen theme + font (shared localStorage; server also injects). -->
+<script>window.__mistFont=null;</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}
+try{var _d=document.documentElement,_fs=localStorage.getItem("fontStack");
+if(!_fs&&window.__mistFont)_fs=window.__mistFont.stack;
+if(_fs)_d.style.setProperty("--q-font",_fs);}catch(e){}</script>
 <style>
   :root {
     --q-acc: 43,212,212;     /* accent / glow rgb */

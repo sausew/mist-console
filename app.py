@@ -91,6 +91,37 @@ def _save_theme(theme):
         pass
 
 
+# Font persists server-side for the same reason as the theme: a wiped WebView
+# localStorage must still repaint the chosen face. We store both the id (for the
+# picker's selected state) and the resolved CSS stack (applied pre-paint).
+FONT_PATH = os.path.join(DATA_DIR, "font.json")
+_VALID_FONT_ID = re.compile(r"^[a-z0-9_-]{1,40}$")
+# The font stack is user-chosen from a fixed client list but we still sanitize:
+# a CSS font-family value is names, quotes, commas, spaces, hyphens — nothing
+# that could break out of the inline <style>/JSON injection.
+_VALID_FONT_STACK = re.compile(r'^[A-Za-z0-9 ,"\'\-]{0,200}$')
+
+
+def _load_font():
+    try:
+        with open(FONT_PATH) as f:
+            d = json.load(f) or {}
+        fid, stack = d.get("id"), d.get("stack") or ""
+        if fid and _VALID_FONT_ID.match(fid) and _VALID_FONT_STACK.match(stack):
+            return {"id": fid, "stack": stack}
+    except Exception:
+        pass
+    return {"id": "default", "stack": ""}
+
+
+def _save_font(fid, stack):
+    try:
+        with open(FONT_PATH, "w") as f:
+            json.dump({"id": fid, "stack": stack}, f)
+    except Exception:
+        pass
+
+
 _workspace = _load_workspace()
 
 
@@ -314,6 +345,7 @@ def index():
         theme = _load_theme()
         html = html.replace('||"terminal"', '||' + json.dumps(theme))
         html = html.replace('<html lang="en">', '<html lang="en" data-theme="%s">' % theme)
+        html = html.replace('window.__mistFont=null;', 'window.__mistFont=%s;' % json.dumps(_load_font()))
         return Response(html, mimetype="text/html")
     except Exception:
         return send_from_directory("static", "index.html")
@@ -465,6 +497,7 @@ def quickbox():
         theme = _load_theme()
         html = html.replace('||"terminal"', '||' + json.dumps(theme))
         html = html.replace('<html lang="en">', '<html lang="en" data-theme="%s">' % theme)
+        html = html.replace('window.__mistFont=null;', 'window.__mistFont=%s;' % json.dumps(_load_font()))
         return Response(html, mimetype="text/html")
     except Exception:
         return send_from_directory("static", "quickbox.html")
@@ -481,6 +514,19 @@ def theme():
         _save_theme(t)
         return jsonify({"ok": True, "theme": t})
     return jsonify({"theme": _load_theme()})
+
+
+@app.route("/font", methods=["GET", "POST"])
+def font():
+    if request.method == "POST":
+        d = request.get_json(silent=True) or {}
+        fid = (d.get("id") or "").strip()
+        stack = (d.get("stack") or "").strip()
+        if not _VALID_FONT_ID.match(fid) or not _VALID_FONT_STACK.match(stack):
+            return jsonify({"ok": False, "error": "invalid font"}), 400
+        _save_font(fid, stack)
+        return jsonify({"ok": True, "id": fid, "stack": stack})
+    return jsonify(_load_font())
 
 
 @app.route("/sessions", methods=["GET"])
