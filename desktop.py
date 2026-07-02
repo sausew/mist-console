@@ -835,11 +835,28 @@ def main():
         "MIST Console", f"http://127.0.0.1:{PORT}",
         js_api=Api(), width=1120, height=800, min_size=(720, 520),
         background_color="#0E1C2B", hidden=quiet)
-    # Mark the instance windowless when the user closes the window, so a later /raise
-    # reports honestly (see _raise_main / the single-instance guard in main()).
+    # Closing the window FULLY shuts the server down — no lingering "windowless
+    # zombie" that keeps port 5014 (and stale code) alive. Stop every ClaudeSession
+    # child first so nothing is orphaned on the 8 GB machine, then hard-exit:
+    # os._exit sidesteps the AppKit runloop / native overlay panel that otherwise
+    # keep this process alive on macOS after the last window closes (a plain return
+    # from webview.start() can hang there). The zombie-evict path in main() stays
+    # as a crash safety net for the rare case a process is left on the port anyway.
     def _on_closed():
         global _window_closed
         _window_closed = True
+        try:
+            for _s in list(getattr(appmod, "_sessions", {}).values()):
+                try:
+                    _s.stop()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        def _bye():
+            time.sleep(0.4)   # let terminate() reach the claude children (they clean up their MCP subprocesses)
+            os._exit(0)
+        threading.Thread(target=_bye, daemon=True).start()
     try:
         _main_window.events.closed += _on_closed
     except Exception:
