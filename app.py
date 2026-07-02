@@ -351,19 +351,22 @@ def index():
         return send_from_directory("static", "index.html")
 
 
-# Serve a local image file inline so generated images (mist-image -> ~/Downloads)
-# can render in the chat. Locked to image extensions under a small allowlist of
-# roots so a stray ?path= can't read arbitrary files. ?download=1 forces a save.
+# Serve a local media file inline so generated images (mist-image -> ~/Downloads)
+# and generated songs (mist-music -> tmp/audio) can render/play in the chat.
+# Locked to known media extensions under a small allowlist of roots so a stray
+# ?path= can't read arbitrary files. ?download=1 forces a save.
 _IMG_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+_AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac"}
+_MEDIA_EXTS = _IMG_EXTS | _AUDIO_EXTS
 _IMG_ROOTS = [os.path.realpath(os.path.expanduser(p)) for p in (
     "~/Downloads", "~/Exobrain/Attachments", "~/Documents/Exobrain harness")]
 
 
 def _safe_image_path(raw):
-    """Resolve `raw` to a real image file under the allowlist, or None."""
+    """Resolve `raw` to a real media file (image or audio) under the allowlist, or None."""
     path = os.path.realpath(os.path.expanduser(raw or ""))
     under = any(path == r or path.startswith(r + os.sep) for r in _IMG_ROOTS)
-    if (under and os.path.splitext(path)[1].lower() in _IMG_EXTS
+    if (under and os.path.splitext(path)[1].lower() in _MEDIA_EXTS
             and os.path.isfile(path)):
         return path
     return None

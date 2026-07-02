@@ -885,6 +885,15 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
 .genimg-dl:hover { background: var(--hover); }
 .genimg-dl:focus-visible { opacity: 1; outline: 1px solid var(--focus); }
 .genimg-dl svg { width: 16px; height: 16px; display: block; }
+/* Generated audio (mist-music): inline <audio> player + a persistent download
+   button. Reuses .genimg-dl chrome, but sits inline (audio is a wide bar, not a
+   square) and stays visible (no image to hover over). */
+.genaudio-wrap {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 6px 0; max-width: 100%; vertical-align: middle; line-height: normal;
+}
+.genaudio { height: 36px; max-width: min(340px, 100%); }
+.genaudio-dl { position: static; opacity: 1; flex: none; }
 /* Confirmation flash after a one-click save to ~/Downloads. */
 .genimg-dl.saved { opacity: 1; color: var(--ok); border-color: var(--ok); }
 .genimg-dl.save-err { opacity: 1; color: var(--err); border-color: var(--err); }
