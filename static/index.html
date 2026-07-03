@@ -34,7 +34,6 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
   </div>
   <div class="actions">
     <button id="notesBtn" title="Notes · a persistent scratchpad saved to disk">notes</button>
-    <button id="routinesBtn" title="Routines · scheduled agents from Claude Code">routines</button>
     <button id="settingsBtn" title="Settings · active MCP servers + tools">settings</button>
   </div>
 </header>
@@ -63,15 +62,6 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
   </main>
 </div>
 
-<aside id="routinesPanel" hidden>
-  <div class="capHead">routines <span class="count" id="nRoutines"></span><button id="routinesClose">×</button></div>
-  <div class="capBody" id="routinesBody"></div>
-  <div class="routines-foot">
-    <button id="routineNew" class="rt-new">+ new routine</button>
-    <div class="routines-note">Edits write <code>~/.claude/scheduled-tasks</code> (shared with the Claude desktop app). Enabling a schedule runs the routine from the Console via launchd. If the same routine is also scheduled in the desktop app, it will run twice — disable it there.</div>
-  </div>
-</aside>
-
 <aside id="capPanel" hidden>
   <div class="capHead">settings <button id="capClose">×</button></div>
   <div class="capBody">
@@ -93,6 +83,14 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
     <h4>tools <span class="count" id="nTools"></span></h4><div id="capTools" class="chips"></div>
     <h4>skills <span class="count" id="nSkills"></span></h4><div id="capSkills" class="chips"></div>
     <h4>slash commands <span class="count" id="nSlash"></span></h4><div id="capSlash" class="chips"></div>
+    <h4>routines <span class="count" id="nRoutines"></span></h4>
+    <div id="routinesSection">
+      <div id="routinesBody"></div>
+      <div class="routines-foot">
+        <button id="routineNew" class="rt-new">+ new routine</button>
+        <div class="routines-note">Edits write <code>~/.claude/scheduled-tasks</code> (shared with the Claude desktop app). Enabling a schedule runs the routine from the Console via launchd. If the same routine is also scheduled in the desktop app, it will run twice — disable it there.</div>
+      </div>
+    </div>
   </div>
 </aside>
 

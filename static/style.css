@@ -314,14 +314,13 @@ details.tool[open] > summary.tool-head::before { content: "▾"; }
 
 /* ---- capabilities panel ---- */
 /* start below the top bar so the trigger buttons stay visible + clickable */
-#capPanel, #routinesPanel {
+#capPanel {
   position: fixed; top: var(--topbar-h, 0px); right: 0; width: 340px; height: calc(100% - var(--topbar-h, 0px));
   background: #0c1825; border-left: 1px solid var(--line);
   display: flex; flex-direction: column; z-index: 20;
 }
-#capPanel[hidden], #routinesPanel[hidden] { display: none; }   /* id selector beats UA [hidden]; restore it */
-#routinesBody { flex: 1 1 auto; min-height: 0; }
-.routines-foot { border-top: 1px solid var(--line); padding: 8px 12px; }
+#capPanel[hidden] { display: none; }   /* id selector beats UA [hidden]; restore it */
+.routines-foot { border-top: 1px solid var(--line); padding: 8px 0 2px; margin-top: 8px; }
 .routines-note { color: var(--dim); font-size: 10px; line-height: 1.5; }
 .routines-note code { color: #9db3c6; }
 .rt-new { width: 100%; font-family: var(--mono); font-size: 12px; padding: 6px;
@@ -565,7 +564,6 @@ html[data-theme="solarpunk"] .logo { letter-spacing: 3px; }
 html[data-theme="solarpunk"] #topbar,
 html[data-theme="solarpunk"] #tabrail,
 html[data-theme="solarpunk"] #capPanel,
-html[data-theme="solarpunk"] #routinesPanel,
 html[data-theme="solarpunk"] #notesPanel,
 html[data-theme="solarpunk"] #composer,
 html[data-theme="solarpunk"] #slashMenu,
@@ -661,7 +659,6 @@ html[data-theme="solarpunk"] #modelCard,
 html[data-theme="solarpunk"] #permCard,
 html[data-theme="solarpunk"] .scratch-item { box-shadow: 0 1px 4px rgba(74,60,30,.10); }
 html[data-theme="solarpunk"] #capPanel,
-html[data-theme="solarpunk"] #routinesPanel,
 html[data-theme="solarpunk"] #notesPanel { box-shadow: -2px 0 16px rgba(74,60,30,.10); }
 
 /* --- accents: forest green + warm gold, NO neon glow --- */
