@@ -83,7 +83,12 @@ html[data-theme="solarpunk"] #logs::after {
 .logo-img { height: 24px; width: auto; display: block; }
 .logo { color: var(--teal); font-weight: 700; letter-spacing: 2px; }
 .sub { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-.meta { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+/* top-row cards stay in a single row at all times: never wrap, and if the
+   window gets too tight, scroll horizontally (scrollbar hidden) instead of
+   spilling onto a second row or squishing the brand/action buttons. */
+.meta { display: flex; gap: 6px; flex: 1; flex-wrap: nowrap; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.meta::-webkit-scrollbar { display: none; }
+.badge { flex: 0 0 auto; }
 .badge {
   border: 1px solid var(--line); color: var(--dim);
   padding: 2px 7px; font-size: 11px; white-space: nowrap;
