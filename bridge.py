@@ -24,6 +24,43 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DEFAULT_PERMISSION_MODE = "bypassPermissions"
 HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 
+# Event slimming. Raw stream-json events carry a `tool_use_result` sidecar that
+# nothing in the Console reads; for edits/reads of large files it embeds whole
+# file snapshots — one edit to the 13 MB dnd-sheet index.html persisted ~14 MB,
+# and a single coding session's jsonl reached 1.5 GB (data/ hit 21 GB, and the
+# nightly Exobrain backup ballooned with it). Oversized payloads are stubbed
+# before they reach history/disk; a generic string cap then bounds any future
+# event shape we haven't met yet. Raise the caps if a feature ever needs the
+# full payloads back.
+TOOL_RESULT_STUB_OVER = 32_768   # bytes of serialized tool_use_result kept as-is
+STRING_CAP = 262_144             # any longer string field is truncated
+
+
+def _slim_event(obj):
+    """Return obj with oversized payloads stubbed/truncated. Copy-on-write:
+    the dict already broadcast to live subscribers is never mutated."""
+    try:
+        out = obj
+        tur = obj.get("tool_use_result")
+        if tur is not None:
+            blob = json.dumps(tur)
+            if len(blob) > TOOL_RESULT_STUB_OVER:
+                out = dict(obj)
+                out["tool_use_result"] = {"_stubbed": True, "_bytes": len(blob)}
+        if len(json.dumps(out)) > 2 * STRING_CAP:
+            def walk(v):
+                if isinstance(v, str) and len(v) > STRING_CAP:
+                    return v[:STRING_CAP] + "…[+%d chars stripped]" % (len(v) - STRING_CAP)
+                if isinstance(v, list):
+                    return [walk(x) for x in v]
+                if isinstance(v, dict):
+                    return {k: walk(x) for k, x in v.items()}
+                return v
+            out = walk(out)
+        return out
+    except Exception:
+        return obj
+
 # Context-cost cap. A headless `claude -p --resume` re-bills the WHOLE conversation
 # every turn (no interactive auto-compact here), so a long-lived chat gets quietly
 # expensive — the token sink behind "the Console burns tokens during heavy coding".
@@ -285,6 +322,7 @@ class ClaudeSession:
             pass
 
     def _record(self, obj):
+        obj = _slim_event(obj)
         with self._hist_lock:
             self.history.append(obj)
             if len(self.history) > HISTORY_CAP:
