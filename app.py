@@ -137,7 +137,7 @@ def _save_meta():
                          "last_activity": s.last_activity, "model": s.model,
                          "permission_mode": s.permission_mode,
                          "claude_session_id": s.claude_session_id,
-                         "import_path": s.import_path})
+                         "import_path": s.import_path, "cwd": s.cwd})
         # Atomic write (temp + fsync + os.replace): open(...,"w") truncates the
         # file to zero before writing, so a concurrent reader — another desktop.py
         # process, or _load_meta() on a restart — could catch it empty/half-written,
@@ -174,7 +174,7 @@ def _load_meta():
             pin_order=m.get("pin_order", 0),
             claude_session_id=m.get("claude_session_id"), model=m.get("model"),
             permission_mode=m.get("permission_mode") or DEFAULT_PERMISSION_MODE,
-            import_path=m.get("import_path"), cwd=_workspace,
+            import_path=m.get("import_path"), cwd=m.get("cwd") or _workspace,
             last_activity=m.get("last_activity"), autostart=False)  # dormant
         _order.append(sid)
         try:
@@ -601,10 +601,12 @@ def config():
                     "default_model": _default_model})
 
 
-def _repo_info():
-    """Git origin + branch for the cwd the headless claude runs in (_workspace).
-    'repo currently being pointed at' = where this session would push."""
-    cwd = _workspace
+def _repo_info(cwd=None):
+    """Git origin + branch for the cwd the headless claude runs in.
+    'repo currently being pointed at' = where this session would push. Pass a
+    session's own cwd so the badge reflects the chat you're viewing; falls back
+    to the global default (new-chat inheritance) when no session cwd is given."""
+    cwd = cwd or _workspace
     def git(*args):
         try:
             return subprocess.run(["git", "-C", cwd, *args],
@@ -626,7 +628,11 @@ def _repo_info():
 
 @app.route("/repo")
 def repo():
-    return jsonify(_repo_info())
+    # The badge is per-chat: report the active session's own cwd, not the global
+    # default, so switching chats shows where THAT chat actually runs.
+    sid = request.args.get("session")
+    s = _sessions.get(sid) if sid else None
+    return jsonify(_repo_info(s.cwd if s else None))
 
 
 @app.route("/workspace", methods=["POST"])
