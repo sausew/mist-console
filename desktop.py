@@ -853,6 +853,17 @@ def main():
                     pass
         except Exception:
             pass
+        # Flush session metadata before the hard exit below. A brand-new chat's
+        # claude_session_id (its link to the transcript) is assigned in memory when
+        # the backend's init event lands, and is otherwise only written by the 10s
+        # periodic saver — so closing the window inside that window would os._exit
+        # before it's persisted, and the chat reopens empty (its transcript
+        # orphaned). stop() leaves claude_session_id/title/model intact, so saving
+        # here captures the current in-memory state.
+        try:
+            appmod._save_meta()
+        except Exception:
+            pass
         def _bye():
             time.sleep(0.4)   # let terminate() reach the claude children (they clean up their MCP subprocesses)
             os._exit(0)

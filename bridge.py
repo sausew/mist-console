@@ -24,6 +24,12 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DEFAULT_PERMISSION_MODE = "bypassPermissions"
 HISTORY_CAP = 8000   # max events kept in memory for replay (jsonl keeps all)
 
+# app.py sets this to its _save_meta so a session can persist itself the instant
+# its claude_session_id is assigned (on the backend's init event) — otherwise the
+# id lives only in memory until the 10s periodic saver, and a window close /
+# crash in between reopens the chat empty with its transcript orphaned.
+on_meta_dirty = None
+
 # Event slimming. Raw stream-json events carry a `tool_use_result` sidecar that
 # nothing in the Console reads; for edits/reads of large files it embeds whole
 # file snapshots — one edit to the 13 MB dnd-sheet index.html persisted ~14 MB,
@@ -498,8 +504,18 @@ class ClaudeSession:
             if obj.get("type") == "system" and obj.get("subtype") == "init":
                 self._saw_init = True
                 self.session_id = obj.get("session_id")
-                self.claude_session_id = obj.get("session_id")
+                new_csid = obj.get("session_id")
+                # Persist the id→transcript link the moment it exists, so a window
+                # close or crash before the next periodic save can't leave this chat
+                # reopening empty. Only fire when it actually changed (once per start).
+                _changed = new_csid and new_csid != self.claude_session_id
+                self.claude_session_id = new_csid
                 self.last_init = obj
+                if _changed and on_meta_dirty:
+                    try:
+                        on_meta_dirty()
+                    except Exception:
+                        pass
             elif obj.get("type") == "assistant":
                 # Each assistant message carries the usage of ONE API call — a true
                 # snapshot of current context occupancy. Keep the latest for ctx %.

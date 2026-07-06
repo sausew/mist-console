@@ -1378,6 +1378,9 @@ def _reaper():
             pass
 
 
+import bridge as _bridge
+_bridge.on_meta_dirty = _save_meta   # let a session persist its claude_session_id on init
+
 _load_meta()
 _load_notes()
 _import_existing()
