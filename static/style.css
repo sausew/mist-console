@@ -916,3 +916,43 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
   border: 1px solid var(--line); padding: 6px 16px; cursor: pointer;
 }
 .lightbox-btn:hover { background: var(--hover); }
+
+/* ---------- background-task monitor ----------
+   A live panel over the composer that shows what background agents +
+   `run_in_background` shells are doing while the foreground turn sits idle.
+   Fed by the stream's `system` task_* events. Flat/sharp: square, hairline,
+   no shadow — same language as the tool cards and badges. */
+#bgMonitor {
+  position: fixed; right: 16px; bottom: 84px; z-index: 40;
+  width: min(400px, 42vw); max-height: 44vh; overflow-y: auto;
+  background: var(--bg); border: 1px solid var(--teal);
+  font-size: 12px; color: var(--text);
+}
+#bgMonitor .bgm-head {
+  padding: 6px 10px; border-bottom: 1px solid var(--line);
+  color: var(--teal); letter-spacing: .3px;
+  position: sticky; top: 0; background: var(--bg);
+}
+#bgMonitor .bgm-row {
+  display: flex; gap: 8px; padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+#bgMonitor .bgm-row:last-child { border-bottom: 0; }
+#bgMonitor .bgm-glyph { flex: 0 0 auto; width: 12px; text-align: center; }
+#bgMonitor .bgm-row.running .bgm-glyph { color: var(--teal); animation: dot-breathe 1.15s ease-in-out infinite; }
+#bgMonitor .bgm-row.completed { opacity: .62; }
+#bgMonitor .bgm-row.completed .bgm-glyph { color: var(--ok); }
+#bgMonitor .bgm-row.failed .bgm-glyph { color: var(--err); }
+#bgMonitor .bgm-main { min-width: 0; flex: 1 1 auto; }
+#bgMonitor .bgm-desc {
+  color: var(--text); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#bgMonitor .bgm-sub {
+  margin-top: 2px; color: var(--dim); line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#bgMonitor .bgm-live { color: #9db3c6; }
+#bgMonitor .bgm-meta { color: var(--dim); }
+/* tab-rail dot: an active background task pulses teal like a working turn */
+.tab .dot.bg { background: var(--teal); animation: dot-breathe 1.15s ease-in-out infinite; }

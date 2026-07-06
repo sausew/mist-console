@@ -760,6 +760,10 @@ def stream(sid):
     def gen():
         for ev in s.snapshot_history():     # replay full transcript
             yield _sse(ev)
+        # Boundary marker: everything above is history, everything below is live.
+        # The front-end uses this to reconcile the background-task monitor once
+        # (instead of flickering it as historical task start/finish events replay).
+        yield _sse({"type": "replay_done"})
         q = s.subscribe()                   # then live
         try:
             while True:
