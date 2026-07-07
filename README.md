@@ -45,6 +45,16 @@ uv run --with flask python app.py   # http://127.0.0.1:5014
 
 Port: **5014**.
 
+## Install on Windows (no build needed)
+
+A self-contained Windows build lives at [`releases/MIST Console.exe`](releases/)
+(~35 MB, produced by [the Windows workflow](.github/workflows/windows-exe.yml)).
+Download it and run it: a first-run wizard installs Claude Code, signs you in
+with your Claude subscription, and sets up a workspace; when it finishes, MIST
+introduces herself out loud and demos the Ctrl+Alt+Space quick-entry overlay.
+Windows SmartScreen warns on unsigned exes: choose "More info", then
+"Run anyway". Port details and gotchas in [`windows/README.md`](windows/README.md).
+
 ## Auth: subscription, not API
 
 The Console spawns the official `claude` binary, which authenticates with the **Claude subscription via OAuth** (`apiKeySource: none`, no `ANTHROPIC_API_KEY`, API overage disabled). No Anthropic API key, no per-token API billing. The usage numbers below are the subscription's own rate-limit windows — the same data the statusline shows — so displaying them costs nothing.
