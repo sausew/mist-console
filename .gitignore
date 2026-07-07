@@ -8,3 +8,7 @@ data/
 __pycache__/
 .DS_Store
 **/.DS_Store
+dist-windows/
+build/
+dist/
+*.spec
