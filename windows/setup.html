@@ -109,6 +109,20 @@
 
   <button class="primary" id="btn-finish" style="width:100%;padding:12px">Finish setup and open MIST Console</button>
   <div id="finishmsg"></div>
+
+  <div id="done" style="display:none">
+    <section>
+      <h2><span class="badge ok">all set</span> Meet MIST</h2>
+      <p id="donevoice">She'd like a word before you dive in:</p>
+      <audio id="greetaudio" controls style="width:100%;margin-top:8px" src="/setup/greeting-audio"></audio>
+    </section>
+    <section>
+      <h2>Summon her from anywhere</h2>
+      <p>While the Console is running, press <b id="donekeys">Ctrl+Alt+Space</b> in any app and a quick-entry box appears at the bottom of the screen. Type a thought, hit <b>Enter</b>, and the Console opens on that chat; <b>Esc</b> dismisses it.</p>
+      <button id="btn-tryoverlay">Try it now</button>
+    </section>
+    <button class="primary" id="btn-open" style="width:100%;padding:12px">Open MIST Console</button>
+  </div>
 </main>
 
 <script>
@@ -207,9 +221,24 @@ document.getElementById("btn-finish").onclick = async () => {
   const r = await (await fetch("/setup/finish", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body) })).json();
-  if (r.ok) { location.href = "/"; }
-  else { msg.textContent = r.error || "Something went wrong; try again."; }
+  if (r.ok) {
+    // Swap to the completion screen: MIST's spoken hello + the overlay demo.
+    document.querySelectorAll("main > section, #btn-finish, .sub").forEach(el => el.style.display = "none");
+    document.getElementById("done").style.display = "block";
+    try {
+      const qa = await (await fetch("/quick-access")).json();
+      if (qa.gesture_label) document.getElementById("donekeys").textContent = qa.gesture_label;
+    } catch (e) {}
+    const audio = document.getElementById("greetaudio");
+    audio.play().catch(() => {});   // the Finish click is the user gesture
+  } else {
+    msg.textContent = r.error || "Something went wrong; try again.";
+  }
 };
+document.getElementById("btn-tryoverlay").onclick = async () => {
+  await fetch("/show-quick", { method: "POST" });
+};
+document.getElementById("btn-open").onclick = () => { location.href = "/"; };
 
 refresh();
 setInterval(refresh, 4000);

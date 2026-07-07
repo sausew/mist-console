@@ -748,29 +748,43 @@ def raise_route():
     return jsonify({"ok": False, "error": "no window"}), 503
 
 
-# ---- inert stubs for macOS-only features -------------------------------------
-# The shared front-end probes these; answering with empty/disabled shapes keeps
-# it happy without the hotkey overlay, AirDrop router, or launchd scheduler.
+# ---- quick access (global hotkey overlay) -------------------------------------
+import quickaccess_win
+
+# desktop_win sets this to its overlay-summon callback.
+show_quick = None
+
+
 @app.route("/quick-access/diag")
 def quick_access_diag():
-    return jsonify({"supported": False})
+    return jsonify(quickaccess_win.diagnostics())
 
 
 @app.route("/quick-access/request-permission", methods=["POST"])
 def quick_access_request_permission():
-    return jsonify({"trusted": False})
+    return jsonify({"trusted": True})   # no permission gate on Windows
 
 
-@app.route("/quick-access", methods=["GET", "POST"])
-def quick_access():
-    return jsonify({"enabled": False, "supported": False})
+@app.route("/quick-access", methods=["GET"])
+def quick_access_get():
+    return jsonify(quickaccess_win.get())
+
+
+@app.route("/quick-access", methods=["POST"])
+def quick_access_set():
+    return jsonify(quickaccess_win.save(request.get_json(silent=True) or {}))
 
 
 @app.route("/show-quick", methods=["POST"])
 def show_quick_route():
-    return jsonify({"ok": False, "error": "not supported on Windows"}), 503
+    if show_quick and show_quick():
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "no window"}), 503
 
 
+# ---- inert stubs for macOS-only features -------------------------------------
+# The shared front-end probes these; answering with empty/disabled shapes keeps
+# it happy without the AirDrop router or the launchd scheduler.
 @app.route("/airdrop-claim", methods=["GET", "POST"])
 def airdrop_claim():
     return jsonify({})
@@ -1173,6 +1187,16 @@ def setup_finish():
         config_win.set_env_key("POLLINATIONS_API_KEY", key)
     config_win.save_config(setup_complete=True, workspace=workspace, user_name=name)
     return jsonify({"ok": True, "workspace": workspace})
+
+
+@app.route("/setup/greeting-audio")
+def setup_greeting_audio():
+    """MIST's spoken self-introduction (pre-rendered in her cloned voice),
+    played by the wizard's completion screen."""
+    wav = os.path.join(WINDOWS_DIR, "assets", "mist-intro.wav")
+    if not os.path.isfile(wav):
+        abort(404)
+    return send_file(wav, mimetype="audio/wav")
 
 
 @app.route("/setup/image-key", methods=["POST"])

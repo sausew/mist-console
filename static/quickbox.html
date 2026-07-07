@@ -219,7 +219,9 @@ if(_fs)_d.style.setProperty("--q-font",_fs);}catch(e){}</script>
       } else if (window.pywebview && window.pywebview.api) {
         if (action === "surface") window.pywebview.api.surface();
         else if (action === "dismiss") window.pywebview.api.dismiss();
-        // expand/collapse/screenshot/url have no fallback outside the native panel
+        else if (action === "expand" && window.pywebview.api.expand) window.pywebview.api.expand();
+        else if (action === "collapse" && window.pywebview.api.collapse) window.pywebview.api.collapse();
+        // screenshot/url have no fallback outside the native macOS panel
       }
     } catch (_) {}
   }

@@ -61,6 +61,77 @@ class Api:
         return True
 
 
+class QuickApi:
+    """Exposed to the overlay's quickbox.html (its pywebview fallback branch)."""
+
+    def surface(self):
+        """Enter was hit: hide the overlay, bring the main window up. The main
+        window polls /pending-open and jumps to the seeded chat itself."""
+        _quick_hide()
+        _surface()
+        return True
+
+    def dismiss(self):
+        _quick_hide()
+        return True
+
+    def expand(self):
+        _quick_resize(QH_EXPANDED)
+        return True
+
+    def collapse(self):
+        _quick_resize(QH)
+        return True
+
+
+def _overlay_origin(h):
+    """Bottom-center of the primary screen, above the taskbar."""
+    try:
+        import webview
+        s = webview.screens[0]
+        return int((s.width - QW) / 2), int(s.height - h - 80)
+    except Exception:
+        return 200, 400
+
+
+def _quick_resize(h):
+    if _quick_window is None:
+        return
+    try:
+        x, y = _overlay_origin(h)
+        _quick_window.resize(QW, h)
+        _quick_window.move(x, y)
+    except Exception:
+        pass
+
+
+def _quick_hide():
+    try:
+        if _quick_window is not None:
+            _quick_window.hide()
+    except Exception:
+        pass
+
+
+def _quick_show():
+    """Summon the overlay (called from the hotkey thread or POST /show-quick;
+    pywebview window methods marshal to the UI thread, so this is safe)."""
+    if _quick_window is None:
+        return False
+    try:
+        x, y = _overlay_origin(QH)
+        _quick_window.resize(QW, QH)   # always resummon collapsed
+        _quick_window.move(x, y)
+        _quick_window.show()
+        try:
+            _quick_window.evaluate_js("window.__qfocus && window.__qfocus()")
+        except Exception:
+            pass
+        return True
+    except Exception:
+        return False
+
+
 def _run_flask():
     import app_win
     app_win.app.run(host="127.0.0.1", port=PORT, threaded=True, use_reloader=False)
@@ -174,7 +245,7 @@ def _on_closed():
 
 
 def main():
-    global _main_window
+    global _main_window, _quick_window
     if _instance_already_running(PORT):
         if _raise_existing(PORT):
             return
@@ -186,7 +257,10 @@ def main():
         return
 
     import app_win
+    import quickaccess_win
     app_win.surface_main = _surface
+    app_win.show_quick = _quick_show
+    quickaccess_win.load()
 
     url = f"http://127.0.0.1:{PORT}"
     try:
@@ -195,6 +269,14 @@ def main():
             "MIST Console", url, js_api=Api(),
             width=1120, height=800, min_size=(720, 520),
             background_color="#0E1C2B")
+        # The quick-entry overlay: a hidden frameless always-on-top window
+        # summoned by the global hotkey (see quickaccess_win).
+        qx, qy = _overlay_origin(QH)
+        _quick_window = webview.create_window(
+            "MIST Quick Entry", url + "/quickbox.html", js_api=QuickApi(),
+            width=QW, height=QH, x=qx, y=qy, frameless=True, on_top=True,
+            hidden=True, background_color="#0E1C2B")
+        quickaccess_win.install(_quick_show)
         try:
             _main_window.events.closed += _on_closed
         except Exception:

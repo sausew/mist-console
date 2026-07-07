@@ -25,11 +25,23 @@ Mac-specific machinery.
   Needs the user's own free key (https://auth.pollinations.ai) or Cloudflare
   Workers AI credentials.
 
+- **Quick-access overlay** (`quickaccess_win.py`): press Ctrl+Alt+Space
+  (Ctrl+Alt+M if Space is taken) in any app to summon the quick-entry box,
+  bottom-center, always on top. RegisterHotKey via ctypes, a hidden frameless
+  pywebview window hosting the shared quickbox.html (its pywebview fallback
+  branch, extended with expand/collapse). Works while the Console runs; there
+  is no separate always-on agent like on macOS.
+- **Spoken greeting** (`assets/mist-intro.wav`): MIST introduces herself on
+  the wizard's completion screen, pre-rendered in her cloned voice (the
+  mist-voice XTTS clone; render offline on the Mac, transcribe back to verify,
+  ship the WAV).
+
 ## What was left out (macOS-only)
 
-Quick-access hotkey overlay, AirDrop router, launchd routines scheduler,
-voice greetings, Dock/menu integration. The shared front-end probes those
-routes; `app_win.py` answers with inert stubs so the panels degrade cleanly.
+AirDrop router, launchd routines scheduler, live voice (mist-say), Dock/menu
+integration, overlay screenshot/URL attachments. The shared front-end probes
+those routes; `app_win.py` answers with inert stubs so the panels degrade
+cleanly.
 
 ## Windows-specific gotchas encoded here
 
