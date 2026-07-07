@@ -954,5 +954,30 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
 }
 #bgMonitor .bgm-live { color: #9db3c6; }
 #bgMonitor .bgm-meta { color: var(--dim); }
+/* kill + expand controls */
+#bgMonitor .bgm-row { cursor: pointer; }
+#bgMonitor .bgm-row.killing .bgm-glyph { color: var(--warn); animation: dot-breathe 1.15s ease-in-out infinite; }
+#bgMonitor .bgm-row.killed { opacity: .62; }
+#bgMonitor .bgm-row.killed .bgm-glyph { color: var(--err); }
+#bgMonitor .bgm-kill {
+  flex: 0 0 auto; align-self: flex-start;
+  background: none; border: 1px solid var(--line); color: var(--dim);
+  font: inherit; font-size: 11px; line-height: 1; padding: 3px 6px;
+  border-radius: 0; cursor: pointer;
+}
+#bgMonitor .bgm-kill:hover,
+#bgMonitor .bgm-kill.armed { border-color: var(--err); color: var(--err); }
+#bgMonitor .bgm-kill:disabled { opacity: .5; cursor: default; }
+#bgMonitor .bgm-row.expanded .bgm-desc,
+#bgMonitor .bgm-row.expanded .bgm-sub { white-space: normal; }
+#bgMonitor .bgm-detail {
+  margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line-soft);
+}
+#bgMonitor .bgm-trail { max-height: 130px; overflow-y: auto; }
+#bgMonitor .bgm-trail-line { color: var(--dim); line-height: 1.5; white-space: normal; }
+#bgMonitor .bgm-trail-line:last-child { color: #9db3c6; }
+#bgMonitor .bgm-id {
+  margin-top: 4px; color: var(--dim); font-size: 10px; user-select: text;
+}
 /* tab-rail dot: an active background task pulses teal like a working turn */
 .tab .dot.bg { background: var(--teal); animation: dot-breathe 1.15s ease-in-out infinite; }

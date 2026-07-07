@@ -686,6 +686,19 @@ def set_permission(sid):
     return jsonify({"ok": True, "mode": mode})
 
 
+@app.route("/sessions/<sid>/tasks/<task_id>/stop", methods=["POST"])
+def stop_bg_task(sid, task_id):
+    """Kill one background task on a session (the ✕ in the task monitor).
+    Fire-and-forget: the ack comes back over the event stream as a synthesized
+    task_updated(status=killed), so the monitor resolves itself."""
+    s = _sessions.get(sid)
+    if not s:
+        return jsonify({"ok": False, "error": "no such session"}), 404
+    if not s.stop_task(task_id):
+        return jsonify({"ok": False, "error": "backend not running"}), 409
+    return jsonify({"ok": True})
+
+
 @app.route("/sessions/<sid>/title", methods=["POST"])
 def rename_session(sid):
     s = _sessions.get(sid)

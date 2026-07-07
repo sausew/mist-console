@@ -293,6 +293,8 @@ class ClaudeSession:
         self._turn_active = False    # a send is in flight (no result yet); blocks reaping
         self._ctx_warned = False     # one-shot soft warning at CTX_WARN_PCT
         self._ctx_override = False    # one-shot hard-cap override (next send passes)
+        self._ctl_seq = 0            # control_request id counter (stop_task)
+        self._pending_stops = {}     # control request_id -> task_id awaiting ack
 
         # History loads lazily on first open (snapshot_history), NOT here. At
         # startup app.py constructs a ClaudeSession for every saved chat; eagerly
@@ -532,6 +534,21 @@ class ClaudeSession:
                 # Keep the usage badges' reset/status fresh during Console-only
                 # use (see RATE_LIVE_PATH note); the front-end reads it via /usage.
                 record_rate_limit(obj.get("rate_limit_info") or {})
+            elif obj.get("type") == "control_response":
+                # Ack for a stop_task we sent (see stop_task below). Translate it
+                # into the same task lifecycle event the monitor already speaks —
+                # a synthesized task_updated — so a kill resolves in the UI even
+                # if the task registry never emits its own terminal event.
+                resp = obj.get("response") or {}
+                task_id = self._pending_stops.pop(resp.get("request_id"), None)
+                if task_id:
+                    if resp.get("subtype") == "success":
+                        self._broadcast({"type": "system", "subtype": "task_updated",
+                                         "task_id": task_id, "status": "killed"})
+                    else:
+                        self._broadcast({"type": "system", "subtype": "task_stop_failed",
+                                         "task_id": task_id,
+                                         "error": str(resp.get("error") or "stop failed")})
             self._broadcast(obj)
 
     def _read_stderr(self):
@@ -662,6 +679,31 @@ class ClaudeSession:
             self._turn_active = True   # cleared on the matching result (or exit)
             return True
         except (BrokenPipeError, ValueError, OSError):
+            self.alive = False
+            return False
+
+    def stop_task(self, task_id):
+        """Kill a running background task (agent or run_in_background shell) via
+        the stream-json control protocol: {"subtype":"stop_task","task_id":...}.
+        The CLI acks with a control_response, which _read_stdout translates into
+        a task_updated(status=killed) for the monitor; it also treats
+        not_found/not_running as success, so racing a task that just finished is
+        harmless. Returns False only when there's no live process to signal —
+        a dormant backend has no background tasks to kill anyway."""
+        if not self.alive or not self.proc or self.proc.stdin is None:
+            return False
+        with self._lock:
+            self._ctl_seq += 1
+            req_id = f"console-stop-{self._ctl_seq}"
+        self._pending_stops[req_id] = task_id
+        req = {"type": "control_request", "request_id": req_id,
+               "request": {"subtype": "stop_task", "task_id": task_id}}
+        try:
+            self.proc.stdin.write(json.dumps(req) + "\n")
+            self.proc.stdin.flush()
+            return True
+        except (BrokenPipeError, ValueError, OSError):
+            self._pending_stops.pop(req_id, None)
             self.alive = False
             return False
 
