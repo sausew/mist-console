@@ -20,6 +20,13 @@ import config_win
 PORT = config_win.PORT
 _main_window = None
 _window_closed = False
+_quick_window = None
+
+# Overlay geometry. WebView2 has no transparent-window support in pywebview,
+# so unlike the macOS NSPanel (a huge clear sheet for the glow to fade into)
+# this is a tight box that grows upward when the conversation picker opens.
+QW, QH = 760, 240
+QH_EXPANDED = QH + 340
 
 
 class Api:
