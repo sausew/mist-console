@@ -1,0 +1,2 @@
+# app.js contains intentional NUL sentinel bytes (markdown fence placeholders); diff it as text anyway
+static/app.js diff
