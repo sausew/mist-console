@@ -1,0 +1,55 @@
+name: Build Windows exe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "windows/**"
+      - "static/**"
+      - ".github/workflows/windows-exe.yml"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install flask pillow pywebview pythonnet pyinstaller
+
+      - name: Build icon from the MIST logo
+        run: |
+          python -c "from PIL import Image; img = Image.open('static/mist-logo.png').convert('RGBA'); img.save('windows/mist.ico', sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+
+      - name: Build exe
+        run: >
+          pyinstaller --noconfirm --clean --onefile --noconsole
+          --name "MIST Console"
+          --icon windows/mist.ico
+          --paths windows
+          --add-data "static;static"
+          --add-data "windows/setup.html;windows"
+          --add-data "windows/starter;windows/starter"
+          --hidden-import webview.platforms.edgechromium
+          --hidden-import webview.platforms.winforms
+          --hidden-import clr_loader
+          windows/main_win.py
+
+      - name: Smoke-test the CLI path
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath ".\dist\MIST Console.exe" -ArgumentList "image","--help" `
+               -Wait -PassThru -NoNewWindow `
+               -RedirectStandardOutput out.txt -RedirectStandardError err.txt
+          Get-Content out.txt, err.txt
+          if ($p.ExitCode -ne 0) { throw "image --help exited $($p.ExitCode)" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MIST-Console-Windows
+          path: dist/MIST Console.exe
+          if-no-files-found: error

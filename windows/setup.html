@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MIST Console Setup</title>
+<style>
+  :root {
+    --bg: #101a14; --panel: #16241c; --line: #2c4434; --ink: #d8e8dc;
+    --dim: #8fa898; --accent: #7fd4a0; --warn: #e8c47f; --err: #e08f8f;
+    --ok: #7fd4a0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 "Segoe UI", system-ui, sans-serif;
+    display: flex; justify-content: center; padding: 40px 16px;
+  }
+  main { width: 640px; max-width: 100%; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: .5px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--dim); margin: 0 0 28px; }
+  section {
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  section h2 { font-size: 15px; margin: 0 0 6px; display: flex; align-items: center; gap: 10px; }
+  .badge {
+    font-size: 12px; padding: 1px 8px; border: 1px solid var(--line); color: var(--dim);
+    min-width: 64px; text-align: center;
+  }
+  .badge.ok   { color: var(--ok);   border-color: var(--ok); }
+  .badge.warn { color: var(--warn); border-color: var(--warn); }
+  .badge.err  { color: var(--err);  border-color: var(--err); }
+  p { margin: 6px 0; color: var(--dim); font-size: 14px; }
+  p b { color: var(--ink); font-weight: 600; }
+  button {
+    background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    padding: 7px 16px; font: inherit; font-size: 14px; cursor: pointer; margin-top: 8px;
+  }
+  button:hover { background: rgba(127, 212, 160, .12); }
+  button:disabled { color: var(--dim); border-color: var(--line); cursor: default; background: none; }
+  button.primary { background: var(--accent); color: #0c140f; font-weight: 600; }
+  button.primary:hover { filter: brightness(1.1); }
+  input[type=text] {
+    width: 100%; background: #0c140f; color: var(--ink); border: 1px solid var(--line);
+    padding: 8px 10px; font: inherit; font-size: 14px; margin-top: 6px;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
+  label.check { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; color: var(--dim); font-size: 14px; cursor: pointer; }
+  label.check input { margin-top: 4px; accent-color: var(--accent); }
+  pre#log {
+    background: #0c140f; border: 1px solid var(--line); color: var(--dim);
+    font: 12px/1.5 Consolas, monospace; padding: 10px 12px; max-height: 180px;
+    overflow-y: auto; white-space: pre-wrap; display: none; margin: 10px 0 0;
+  }
+  a { color: var(--accent); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  #finishmsg { color: var(--err); font-size: 14px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Welcome to <span>MIST Console</span></h1>
+  <p class="sub">A couple of steps and you'll be chatting. This wizard checks each piece and fixes what it can.</p>
+
+  <section id="s-claude">
+    <h2><span class="badge" id="b-claude">checking…</span> Claude Code</h2>
+    <p>The Console runs the official <b>claude</b> command-line app under the hood. Your Claude subscription signs in through it; no API key is needed.</p>
+    <p id="p-claude"></p>
+    <button id="btn-install" style="display:none">Install Claude Code</button>
+  </section>
+
+  <section id="s-git">
+    <h2><span class="badge" id="b-git">checking…</span> Git for Windows</h2>
+    <p>Claude Code uses Git Bash to run commands. If it's missing, grab it from
+      <a href="#" onclick="openExt('https://git-scm.com/download/win');return false">git-scm.com/download/win</a>
+      (default options are fine), then come back; this page rechecks on its own.</p>
+  </section>
+
+  <section id="s-auth">
+    <h2><span class="badge" id="b-auth">checking…</span> Sign in</h2>
+    <p id="p-auth">Sign in with your Claude account. A browser window will open; approve it and return here.</p>
+    <button id="btn-login" style="display:none">Sign in to Claude</button>
+  </section>
+
+  <pre id="log"></pre>
+
+  <section>
+    <h2>Make it yours</h2>
+    <p>What should MIST call you? (optional)</p>
+    <input type="text" id="in-name" placeholder="Your name" maxlength="40">
+    <p style="margin-top:14px">Workspace folder. Chats run inside it, and its CLAUDE.md gives Claude standing instructions. The wizard sets it up for you.</p>
+    <div class="row">
+      <input type="text" id="in-workspace" placeholder="C:\Users\you\MIST Workspace">
+      <button id="btn-browse" style="flex:0 0 auto">Browse…</button>
+    </div>
+    <label class="check"><input type="checkbox" id="in-persona" checked>
+      Give Claude the MIST personality (curious, warm, direct: the character the Console is named for)</label>
+  </section>
+
+  <section>
+    <h2>Image generation <span class="badge" style="border:none">optional</span></h2>
+    <p>The Console bundles an image generator (runs on a free cloud GPU; images render right in the chat, just ask Claude to draw something). It needs a free key from
+      <a href="#" onclick="openExt('https://auth.pollinations.ai');return false">auth.pollinations.ai</a>:
+      sign in there, copy your key, paste it here. Skip this and add it later in settings if you want.</p>
+    <input type="text" id="in-key" placeholder="Pollinations API key (optional)">
+  </section>
+
+  <button class="primary" id="btn-finish" style="width:100%;padding:12px">Finish setup and open MIST Console</button>
+  <div id="finishmsg"></div>
+</main>
+
+<script>
+let logAt = 0, busy = "";
+
+function openExt(url) {
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.open_url) {
+    window.pywebview.api.open_url(url);
+  } else {
+    window.open(url, "_blank");
+  }
+}
+
+function badge(id, cls, text) {
+  const el = document.getElementById(id);
+  el.className = "badge " + cls;
+  el.textContent = text;
+}
+
+async function refresh() {
+  let st;
+  try { st = await (await fetch("/setup/status")).json(); } catch (e) { return; }
+  busy = st.busy || "";
+
+  if (st.claude) {
+    badge("b-claude", "ok", "installed");
+    document.getElementById("p-claude").textContent = st.claude;
+    document.getElementById("btn-install").style.display = "none";
+  } else {
+    badge("b-claude", "err", "missing");
+    document.getElementById("p-claude").textContent = "";
+    const b = document.getElementById("btn-install");
+    b.style.display = "";
+    b.disabled = !!busy;
+    b.textContent = busy === "install-claude" ? "Installing…" : "Install Claude Code";
+  }
+
+  badge("b-git", st.git_bash ? "ok" : "warn", st.git_bash ? "installed" : "missing");
+
+  const loginBtn = document.getElementById("btn-login");
+  if (st.auth === "ok") {
+    badge("b-auth", "ok", "signed in");
+    document.getElementById("p-auth").textContent = st.auth_detail || "Signed in.";
+    loginBtn.style.display = "none";
+  } else {
+    badge("b-auth", st.claude ? "warn" : "err", st.auth === "none" ? "not signed in" : "unknown");
+    loginBtn.style.display = st.claude ? "" : "none";
+    loginBtn.disabled = !!busy;
+    loginBtn.textContent = busy === "login" ? "Waiting for browser…" : "Sign in to Claude";
+  }
+
+  if (!document.getElementById("in-workspace").value) {
+    document.getElementById("in-workspace").value = st.workspace || "";
+  }
+  if (!document.getElementById("in-name").value && st.user_name) {
+    document.getElementById("in-name").value = st.user_name;
+  }
+}
+
+async function poll_log() {
+  try {
+    const d = await (await fetch("/setup/log?since=" + logAt)).json();
+    if (d.lines && d.lines.length) {
+      const pre = document.getElementById("log");
+      pre.style.display = "block";
+      pre.textContent += d.lines.join("\n") + "\n";
+      pre.scrollTop = pre.scrollHeight;
+      logAt = d.next;
+    }
+  } catch (e) {}
+}
+
+document.getElementById("btn-install").onclick = async () => {
+  await fetch("/setup/install-claude", { method: "POST" });
+  refresh();
+};
+document.getElementById("btn-login").onclick = async () => {
+  await fetch("/setup/login", { method: "POST" });
+  refresh();
+};
+document.getElementById("btn-browse").onclick = async () => {
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.pick_folder) {
+    const p = await window.pywebview.api.pick_folder();
+    if (p) document.getElementById("in-workspace").value = p;
+  }
+};
+document.getElementById("btn-finish").onclick = async () => {
+  const msg = document.getElementById("finishmsg");
+  msg.textContent = "";
+  const body = {
+    workspace: document.getElementById("in-workspace").value.trim(),
+    user_name: document.getElementById("in-name").value.trim(),
+    persona: document.getElementById("in-persona").checked,
+    pollinations_key: document.getElementById("in-key").value.trim(),
+  };
+  const r = await (await fetch("/setup/finish", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body) })).json();
+  if (r.ok) { location.href = "/"; }
+  else { msg.textContent = r.error || "Something went wrong; try again."; }
+};
+
+refresh();
+setInterval(refresh, 4000);
+setInterval(poll_log, 1200);
+</script>
+</body>
+</html>
