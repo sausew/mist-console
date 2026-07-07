@@ -500,7 +500,9 @@ def sessions():
 @app.route("/sessions", methods=["POST"])
 def create_session():
     sid = _new_session()
-    return jsonify({"id": sid, "title": "New chat"})
+    s = _sessions[sid]
+    return jsonify({"id": sid, "title": "New chat",
+                    "model": s.model or "", "permission_mode": s.permission_mode or ""})
 
 
 @app.route("/sessions/<sid>", methods=["DELETE"])
