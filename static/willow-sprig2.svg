@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="210" viewBox="0 0 120 210">
+  <defs>
+    <g id="lf">
+      <path fill="#6f8b45" d="M0 8 C 11 -1 12 -20 1 -35 C 0.4 -35.6 -0.4 -35.6 -1 -35 C -12 -20 -11 -1 0 8 Z"/>
+      <g stroke="#43601f" stroke-width="1.1" fill="none" opacity=".55" stroke-linecap="round">
+        <path d="M0 6 C 1 -8 1 -22 0.5 -32"/>
+        <path d="M0.4 -2 L7 -9"/><path d="M-0.2 -2 L-6 -9"/>
+        <path d="M0.6 -13 L6 -20"/><path d="M-0.2 -13 L-5 -20"/>
+      </g>
+    </g>
+  </defs>
+  <g opacity=".22" transform="translate(120,0) scale(-1,1)">
+    <path d="M60 196 C 52 160 56 135 60 110 C 64 85 56 55 60 18" stroke="#6f8b45" stroke-width="3.2" fill="none"/>
+    <use href="#lf" transform="translate(57,152) rotate(-52) scale(1.05)"/>
+    <use href="#lf" transform="translate(63,133) rotate(50) scale(1.05)"/>
+    <use href="#lf" transform="translate(56,110) rotate(-46)"/>
+    <use href="#lf" transform="translate(64,90) rotate(44)"/>
+    <use href="#lf" transform="translate(57,66) rotate(-38) scale(.9)"/>
+    <use href="#lf" transform="translate(63,48) rotate(36) scale(.9)"/>
+    <use href="#lf" transform="translate(60,24) scale(.78)"/>
+  </g>
+</svg>

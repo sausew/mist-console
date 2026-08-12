@@ -981,3 +981,245 @@ html[data-theme="solarpunk"] .tabsection.pinned .pin-ico { fill: var(--gold); }
 }
 /* tab-rail dot: an active background task pulses teal like a working turn */
 .tab .dot.bg { background: var(--teal); animation: dot-breathe 1.15s ease-in-out infinite; }
+
+/* ============================================================
+   WILLOW  —  Whitney's theme. A cozy, lived-in room, not a console.
+   Warm linen ground, soft clay + sage accents, book-serif text
+   (Windows-native so it renders on her machine), rounded edges,
+   NO ornament, NO wallpaper. Clean and quiet on purpose.
+   ============================================================ */
+html[data-theme="willow"] {
+  --bg:        #EBDFCA;   /* warm oat, golden-hour */
+  --bg-2:      #F6EEDEcc; /* translucent panel */
+  --line:      #DBCFB6;   /* warm clay-taupe hairline */
+  --line-soft: #E7DBC5;
+  --text:      #3A2E20;   /* warm roasted bark — soft near-black, never cold */
+  --dim:       #8C7B60;   /* taupe secondary text */
+  --teal:      #7E894F;   /* PRIMARY accent = warm olive (the assistant / links) */
+  --violet:    #B0873F;   /* thinking = amber-ochre */
+  --user:      #B0562E;   /* the human = rich clay / terracotta */
+  --warn:      #C4842F;   /* honey amber */
+  --err:       #AF4A32;   /* warm brick */
+  --ok:        #7E894F;   /* olive */
+  /* theme-local surfaces — all light/warm, never dark */
+  --surface:   #EAD9BE;   /* bars & panels: honeyed sand */
+  --surface-2: #FBF4E6;   /* fields / raised chips: warm cream */
+  --code-bg:   #ECE0C9;   /* parchment code blocks */
+  --hover:     #E3D5B9;   /* deeper sand */
+  --active:    #EFDFC0;   /* honey selection */
+  --user-bg:   #F7E7CF;   /* warm clay-cream bubble */
+  --leaf:      #6f8b45;   /* foliage green — the "working" pulse + sprigs */
+  --gold:      #CFA353;   /* honey */
+  --amber:     #DCA94F;
+  --focus:     0 0 0 3px rgba(176,86,46,.20);   /* soft clay focus ring */
+  --radius:    14px;
+  /* Windows-native warm book fonts: Constantia is a humanist reading serif that
+     ships on Windows — cozy and un-terminal. Georgia/Cambria as fallbacks. */
+  --mono: "Constantia", "Georgia", "Cambria", "Palatino Linotype", serif;
+  --head: "Constantia", "Georgia", "Cambria", serif;
+  --wp-opacity: 0;        /* the lily wallpaper is off; sprigs come in via ::after below */
+}
+/* golden-hour light: warm sun pooling in from the top-right, no hard spotlights */
+html[data-theme="willow"] body {
+  font-size: 15.5px; line-height: 1.72;
+  background:
+    radial-gradient(1200px 760px at 90% -14%, rgba(214,162,74,.24), transparent 60%),
+    radial-gradient(1000px 640px at -8% 110%, rgba(150,110,60,.12), transparent 60%),
+    linear-gradient(180deg, #EFE5D0 0%, #E5D6BB 100%);
+  background-attachment: fixed;
+}
+/* code stays monospace even though the UI is a warm serif */
+html[data-theme="willow"] .body pre,
+html[data-theme="willow"] .body code,
+html[data-theme="willow"] .tool pre,
+html[data-theme="willow"] .body .copy-btn {
+  font-family: "Cascadia Code", "Consolas", "SF Mono", Menlo, monospace;
+}
+/* display type: logo, headings, panel titles, greeting — a touch more spacing */
+html[data-theme="willow"] .logo,
+html[data-theme="willow"] .body h1,
+html[data-theme="willow"] .body h2,
+html[data-theme="willow"] .body h3,
+html[data-theme="willow"] .capHead,
+html[data-theme="willow"] .greet { font-family: var(--head); letter-spacing: .2px; }
+html[data-theme="willow"] .logo { letter-spacing: 2px; font-weight: 700; }
+html[data-theme="willow"] .sub { color: var(--dim); }
+
+/* --- panels & bars get the warm-sand surface --- */
+html[data-theme="willow"] #topbar,
+html[data-theme="willow"] #tabrail,
+html[data-theme="willow"] #capPanel,
+html[data-theme="willow"] #notesPanel,
+html[data-theme="willow"] #composer,
+html[data-theme="willow"] #slashMenu,
+html[data-theme="willow"] #modelCard,
+html[data-theme="willow"] #permCard,
+html[data-theme="willow"] #railToggle { background: var(--surface); }
+
+/* --- fields / small controls: clean warm white --- */
+html[data-theme="willow"] #input,
+html[data-theme="willow"] #notesInput,
+html[data-theme="willow"] .rt-field input,
+html[data-theme="willow"] .rt-field textarea,
+html[data-theme="willow"] .rt-new,
+html[data-theme="willow"] .rt-actions button,
+html[data-theme="willow"] .qa-rec,
+html[data-theme="willow"] .scratch-item,
+html[data-theme="willow"] .scratch-edit,
+html[data-theme="willow"] .tab .trename,
+html[data-theme="willow"] .body .copy-btn { background: var(--surface-2); }
+
+/* --- code / parchment surfaces (light, not dark) --- */
+html[data-theme="willow"] .body pre,
+html[data-theme="willow"] .body code,
+html[data-theme="willow"] .body .md-table th,
+html[data-theme="willow"] .body .md-table code { background: var(--code-bg); color: var(--text); }
+html[data-theme="willow"] .body .md-table tbody tr:nth-child(even) td { background: #EEE8D8; }
+
+/* --- hover / active fills (were dark blues) --- */
+html[data-theme="willow"] details.tool > summary.tool-head,
+html[data-theme="willow"] .tab:hover { background: var(--hover); }
+html[data-theme="willow"] .modelrow:hover,
+html[data-theme="willow"] .slash-item.sel { background: var(--active); }
+html[data-theme="willow"] #jumpBtn { background: var(--active); color: var(--teal); }
+html[data-theme="willow"] #jumpBtn:hover { background: #D9D6C2; }
+
+/* --- user message bubble: warm clay-cream, terracotta edge, bark text --- */
+html[data-theme="willow"] .msg.user .body {
+  color: var(--text); background: var(--user-bg);
+  border: 1px solid #E7CDAF; border-left: 3px solid var(--user);
+}
+
+/* --- secondary text that was cool gray → warm taupe so it reads on linen --- */
+html[data-theme="willow"] .think .think-body,
+html[data-theme="willow"] .tool .tsummary,
+html[data-theme="willow"] .tool .tool-result,
+html[data-theme="willow"] .tool pre,
+html[data-theme="willow"] .chips span,
+html[data-theme="willow"] .routines-note code,
+html[data-theme="willow"] .badge.usage,
+html[data-theme="willow"] .badge.repo { color: #6E6353; }
+
+/* --- soft rounded edges everywhere (calm, not sharp) --- */
+html[data-theme="willow"] .badge { border-radius: 999px; padding: 2px 10px; }
+html[data-theme="willow"] button,
+html[data-theme="willow"] #input,
+html[data-theme="willow"] #notesInput,
+html[data-theme="willow"] .rt-field input,
+html[data-theme="willow"] .rt-field textarea,
+html[data-theme="willow"] .rt-new,
+html[data-theme="willow"] .scratch-item,
+html[data-theme="willow"] .scratch-edit,
+html[data-theme="willow"] .think,
+html[data-theme="willow"] .msg.user .body,
+html[data-theme="willow"] .notice,
+html[data-theme="willow"] .chips span,
+html[data-theme="willow"] #modelCard,
+html[data-theme="willow"] #permCard,
+html[data-theme="willow"] #slashMenu,
+html[data-theme="willow"] #railToggle,
+html[data-theme="willow"] #jumpBtn { border-radius: var(--radius); }
+html[data-theme="willow"] .tool,
+html[data-theme="willow"] details.tool > summary.tool-head { border-radius: 10px; }
+html[data-theme="willow"] details.tool[open] > summary.tool-head { border-radius: 10px 10px 0 0; }
+html[data-theme="willow"] .body pre,
+html[data-theme="willow"] .body code { border-radius: 8px; }
+
+/* gentle warm depth instead of hard hairlines */
+html[data-theme="willow"] .tool,
+html[data-theme="willow"] .msg.user .body,
+html[data-theme="willow"] #modelCard,
+html[data-theme="willow"] #permCard,
+html[data-theme="willow"] .scratch-item { box-shadow: 0 1px 4px rgba(74,60,30,.09); }
+html[data-theme="willow"] #capPanel,
+html[data-theme="willow"] #notesPanel { box-shadow: -2px 0 16px rgba(74,60,30,.09); }
+
+/* --- accents: sage + clay, no glow --- */
+html[data-theme="willow"] .msg.mist .who { color: var(--teal); }
+html[data-theme="willow"] .cursor { background: var(--user); border-radius: 2px; }
+html[data-theme="willow"] .body a { color: var(--user); text-decoration: none; border-bottom: 1px solid rgba(180,100,62,.35); }
+html[data-theme="willow"] .body a:hover { color: #96502F; border-bottom-color: var(--gold); }
+html[data-theme="willow"] #input:focus,
+html[data-theme="willow"] #notesInput:focus,
+html[data-theme="willow"] .rt-field input:focus,
+html[data-theme="willow"] .rt-field textarea:focus { border-color: var(--user); box-shadow: var(--focus); }
+html[data-theme="willow"] #sendBtn:not(:disabled):hover { border-color: var(--user); box-shadow: 0 0 8px rgba(180,100,62,.22); }
+html[data-theme="willow"] .tab.active { box-shadow: inset 2px 0 0 0 var(--user); }
+
+/* selection + scrollbar: warm clay + sand */
+html[data-theme="willow"] ::selection { background: rgba(180,100,62,.20); color: var(--text); }
+html[data-theme="willow"] ::-webkit-scrollbar-thumb { background: #CBBFA6; border-radius: 999px; }
+
+/* --- top-bar chips/buttons + sidebar tabs read as soft raised cards --- */
+html[data-theme="willow"] .badge { background: var(--surface-2); box-shadow: 0 1px 2px rgba(74,60,30,.08); }
+html[data-theme="willow"] .actions button,
+html[data-theme="willow"] #newTab,
+html[data-theme="willow"] #scratchBtn,
+html[data-theme="willow"] #fileBtn,
+html[data-theme="willow"] #sendBtn {
+  background: var(--surface-2); border-color: #D3C7B0;
+  box-shadow: 0 1px 2px rgba(74,60,30,.08);
+}
+html[data-theme="willow"] .actions button:hover,
+html[data-theme="willow"] #newTab:hover,
+html[data-theme="willow"] #scratchBtn:hover,
+html[data-theme="willow"] #fileBtn:hover,
+html[data-theme="willow"] #sendBtn:not(:disabled):hover { border-color: var(--user); color: var(--user); box-shadow: none; }
+
+/* each tab is a soft rounded chip on warm paper */
+html[data-theme="willow"] .tab {
+  margin: 4px 8px; padding: 7px 10px; border-radius: 10px;
+  border: 1px solid #DCD1BC; background: #FBF6ED;
+  box-shadow: 0 1px 2px rgba(74,60,30,.07);
+  color: #4A4133;
+}
+html[data-theme="willow"] .tab .ttitle { color: #4A4133; }
+html[data-theme="willow"] .tab.active .ttitle,
+html[data-theme="willow"] .tab.pinned .ttitle { color: var(--text); }
+html[data-theme="willow"] .tab:hover { background: var(--hover); border-color: #C9BCA1; }
+html[data-theme="willow"] .tab.active {
+  background: var(--active); color: var(--text);
+  border: 1px solid var(--user); padding-left: 10px;
+  box-shadow: 0 1px 4px rgba(74,60,30,.10);
+}
+html[data-theme="willow"] .tab.pinned { border-left: 3px solid var(--gold); }
+html[data-theme="willow"] .tab.pinned.active { border: 1px solid var(--user); border-left: 3px solid var(--gold); }
+html[data-theme="willow"] .tab .tpin {
+  color: var(--dim); border: 1px solid var(--line); border-radius: 4px;
+  width: 18px; height: 18px; padding: 0; box-sizing: border-box; background: var(--surface);
+}
+html[data-theme="willow"] .tab:hover .tpin { border-color: var(--user); color: var(--user); }
+html[data-theme="willow"] .tab .tpin.on { color: var(--gold); border-color: var(--gold); }
+
+/* rail: a calm warm shelf */
+html[data-theme="willow"] #tabrail { background: var(--surface); }
+html[data-theme="willow"] .tab .dot.idle { background: #B3A98F; }
+html[data-theme="willow"] .tab .dot.working,
+html[data-theme="willow"] .spinner .sv-glyph { background: var(--leaf); color: var(--leaf); }
+html[data-theme="willow"] .tab .dot.thinking { background: var(--violet); }
+html[data-theme="willow"] .tab .dot.error { background: var(--err); }
+
+/* "+ new chat": a gentle warm call, not another white card */
+html[data-theme="willow"] #newTab { background: #F3EAD7; border-color: var(--gold); color: #7A5F2E; }
+html[data-theme="willow"] #newTab:hover { background: #EFE2C9; box-shadow: none; }
+
+/* --- soft leafy sprigs, growing quietly in the background --- */
+/* the lily wallpaper slot is repurposed for willow: little sprigs tucked into the
+   corners of the conversation, low-opacity (baked into the SVGs) so they never
+   fight the words. */
+html[data-theme="willow"] #logs::after {
+  background-image: url("willow-sprig.svg"), url("willow-sprig2.svg"), url("willow-sprig.svg");
+  background-repeat: no-repeat;
+  background-position: left -24px bottom -28px, right -30px bottom -36px, right 26px top -44px;
+  background-size: 132px, 152px, 108px;
+  opacity: 1; mix-blend-mode: normal;
+  -webkit-mask-image: none; mask-image: none;
+}
+/* a sprig climbing the chat rail, one peeking in at the top */
+html[data-theme="willow"] #tabrail {
+  background:
+    url("willow-sprig.svg") no-repeat left -22px bottom -26px / 150px,
+    url("willow-sprig2.svg") no-repeat right -26px top -30px / 100px,
+    linear-gradient(180deg, rgba(207,163,83,.12), transparent 40%),
+    var(--surface);
+}

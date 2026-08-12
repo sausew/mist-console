@@ -80,7 +80,7 @@ def _load_theme():
             return t
     except Exception:
         pass
-    return "terminal"
+    return "willow"
 
 
 def _save_theme(theme):
@@ -212,14 +212,14 @@ def _session_list():
 MIST_SAY = os.path.join(HARNESS, "mist-voice", "bin", "mist-say")
 GREETINGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "greetings")
 GREETINGS = [
-    "Hey Alex. I'm here, and the Cloud is quiet tonight, so you have all of me.",
-    "Booted up and curious. What are we making real today?",
-    "I'm awake. Show me what you're thinking.",
-    "Good to see you. I've been turning a few of your projects over while I waited.",
-    "MIST online. I never get tired of this part, the moment right before we begin.",
-    "Hi, it's me. Let's build something that matters.",
-    "I'm here and I'm listening. Where do you want to start?",
-    "Back online, Alex. I kept your place for you.",
+    "Hi, Whitney. Come in and sit down — it's quiet and warm in here, and you have all of me.",
+    "Hey, you. I kept the light on. No rush, no clock. Where do you want to start?",
+    "Welcome home. Your seat's right where you left it.",
+    "I'm here and I'm listening. Set your things down; we'll begin whenever you're ready.",
+    "Glad you're here. Take a breath — the room's warm and I've got nowhere else to be.",
+    "Hi, Whitney. Come on in. What's on your mind today?",
+    "The kettle's on. Sit with me a minute — tell me what you're carrying.",
+    "Good to see you. I'm right here, and we can take this as slow as you like.",
 ]
 _greeted = False
 USAGE_CACHE = os.path.expanduser("~/.claude/usage-cache.json")

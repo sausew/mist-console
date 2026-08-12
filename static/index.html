@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MIST Console</title>
+<title>Willow</title>
 <!-- Apply the saved theme + font before CSS paints so switching never flashes.
      __mistFont is replaced server-side (app.py) with the persisted font so a
      wiped localStorage still paints the right face. localStorage wins if set. -->
 <script>window.__mistFont=null;</script>
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}
+<script>try{var _st=document.documentElement.getAttribute("data-theme");document.documentElement.dataset.theme=_st||localStorage.getItem("theme")||"willow"}catch(e){document.documentElement.dataset.theme="willow"}
 try{var _d=document.documentElement,_fs=localStorage.getItem("fontStack"),_fid=localStorage.getItem("font");
 if(!_fs&&window.__mistFont){_fs=window.__mistFont.stack;_fid=window.__mistFont.id;}
 if(_fs){_d.style.setProperty("--mono",_fs);_d.style.setProperty("--head",_fs);}
@@ -18,10 +18,8 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
 <body>
 <header id="topbar">
   <div class="brand">
-    <img id="logoImg" class="logo-img" src="mist-logo.png" alt="MIST"
-         onerror="this.style.display='none';document.getElementById('logoText').style.display='inline'">
-    <span class="logo" id="logoText" style="display:none">M I S T</span>
-    <span class="sub">MIST</span>
+    <span class="logo" id="logoText">Willow</span>
+    <span class="sub">home</span>
   </div>
   <div class="meta">
     <span class="badge repo clickable" id="repo" data-state="unknown" title="Repo MIST works in · click to change">repo —</span>
@@ -111,7 +109,7 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
   <div id="attachPreview" hidden></div>
   <button id="scratchBtn" title="Notes · a persistent scratchpad saved to disk">note</button>
   <button id="fileBtn" title="Attach a file (inserts its path)">file</button>
-  <textarea id="input" rows="1" placeholder="Talk to MIST…  (Enter to send · Shift+Enter for newline)"></textarea>
+  <textarea id="input" rows="1" placeholder="Talk to Willow…  (Enter to send · Shift+Enter for newline)"></textarea>
   <button id="sendBtn">send</button>
   <input type="file" id="hiddenFile" multiple hidden>
 </footer>

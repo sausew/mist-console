@@ -266,9 +266,9 @@ def main():
     try:
         import webview
         _main_window = webview.create_window(
-            "MIST Console", url, js_api=Api(),
+            "Willow", url, js_api=Api(),
             width=1120, height=800, min_size=(720, 520),
-            background_color="#0E1C2B")
+            background_color="#EFE7DA")
         # The quick-entry overlay: a hidden frameless always-on-top window
         # summoned by the global hotkey (see quickaccess_win).
         qx, qy = _overlay_origin(QH)

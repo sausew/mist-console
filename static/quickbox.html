@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>MIST</title>
+<title>Willow</title>
 <!-- match the app's chosen theme + font (shared localStorage; server also injects). -->
 <script>window.__mistFont=null;</script>
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("theme")||"terminal"}catch(e){document.documentElement.dataset.theme="terminal"}
+<script>try{var _st=document.documentElement.getAttribute("data-theme");document.documentElement.dataset.theme=_st||localStorage.getItem("theme")||"willow"}catch(e){document.documentElement.dataset.theme="willow"}
 try{var _d=document.documentElement,_fs=localStorage.getItem("fontStack");
 if(!_fs&&window.__mistFont)_fs=window.__mistFont.stack;
 if(_fs)_d.style.setProperty("--q-font",_fs);}catch(e){}</script>
@@ -152,7 +152,7 @@ if(_fs)_d.style.setProperty("--q-font",_fs);}catch(e){}</script>
     <div class="row">
       <img class="glyph" src="mist-logo.png" alt="MIST">
       <input id="q" class="q" type="text" autocomplete="off" spellcheck="false"
-             placeholder="Ask MIST…  (Enter to send · Esc to dismiss)">
+             placeholder="Ask Willow…  (Enter to send · Esc to dismiss)">
       <button class="ab" id="pickBtn" title="Send into an existing conversation" onmousedown="event.preventDefault()">⤷</button>
       <button class="ab" id="shotBtn" title="Attach a screenshot selection" onmousedown="event.preventDefault()">⛶</button>
       <button class="ab" id="urlBtn" title="Attach the current page URL" onmousedown="event.preventDefault()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>

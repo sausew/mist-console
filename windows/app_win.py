@@ -48,7 +48,7 @@ _pending_open = None
 
 THEME_PATH = os.path.join(DATA_DIR, "theme.json")
 _VALID_THEME = re.compile(r"^[a-z0-9_-]{1,40}$")
-DEFAULT_THEME = "solarpunk"
+DEFAULT_THEME = "willow"
 
 
 def _load_theme():
@@ -179,14 +179,14 @@ def _session_list():
 
 # ---- greetings + usage -------------------------------------------------------
 GREETINGS = [
-    "Booted up and curious. What are we making real today?",
-    "I'm awake. Show me what you're thinking.",
-    "MIST online. I never get tired of this part, the moment right before we begin.",
-    "Hi, it's me. Let's build something that matters.",
-    "I'm here and I'm listening. Where do you want to start?",
-    "Good to see you{name}. Where were we?",
-    "Hey{name}. I'm here, and the Cloud is quiet, so you have all of me.",
-    "Back online{name}. I kept your place for you.",
+    "Hi{name}. Come in and sit down — it's quiet and warm in here, and you have all of me.",
+    "Hey{name}. I kept the light on. No rush, no clock — where do you want to start?",
+    "Welcome home{name}. Your seat's right where you left it.",
+    "I'm here and I'm listening. Set your things down; we'll begin whenever you're ready.",
+    "Glad you're here{name}. Take a breath — the room's warm and I've got nowhere else to be.",
+    "Come on in{name}. What's on your mind today?",
+    "The kettle's on. Sit with me a minute — tell me what you're carrying.",
+    "Good to see you{name}. We can take this as slow as you like.",
 ]
 _greeted = False
 USAGE_CACHE = os.path.join(os.path.expanduser("~"), ".claude", "usage-cache.json")
