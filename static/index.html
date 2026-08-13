@@ -22,7 +22,7 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
     <span class="sub">home</span>
   </div>
   <div class="meta">
-    <span class="badge repo clickable" id="repo" data-state="unknown" title="Repo MIST works in · click to change">repo —</span>
+    <span class="badge repo clickable" id="repo" data-state="unknown" title="Repo Willow works in · click to change">repo —</span>
     <span class="badge clickable" id="model" title="Model in use · click to switch">model —</span>
     <span class="badge clickable" id="perm" title="Permission mode · click to switch">perm —</span>
     <span class="badge" id="status" data-state="idle">idle</span>
@@ -45,11 +45,13 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
 <aside id="permCard" hidden>
   <div class="capHead">permission mode <button id="permClose">×</button></div>
   <div id="permList"></div>
-  <div class="modelnote">Controls how freely MIST acts. Applies to the active chat on your next message.</div>
+  <div class="modelnote">Controls how freely Willow acts. Applies to the active chat on your next message.</div>
 </aside>
 
 <div id="mid">
   <nav id="tabrail">
+    <div id="roomRail"></div>
+    <div class="rail-section" id="chatsHead">Chats <span class="add" id="newTab2" title="New chat">＋</span></div>
     <div id="tabs"></div>
     <button id="newTab">+ new chat</button>
   </nav>
@@ -57,6 +59,7 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
   <main id="logs">
     <button id="railToggle" title="Hide the chat list" aria-label="Toggle chat list">‹</button>
     <button id="jumpBtn" hidden title="Jump to the latest message">↓ jump to present</button>
+    <div id="roomView" hidden></div>
   </main>
 </div>
 
@@ -75,7 +78,7 @@ if(_fid)_d.dataset.font=_fid;}catch(e){}</script>
         <span class="qa-warn" id="qaPermStatus">needs Accessibility permission</span>
         <button id="qaGrant" class="qa-rec">Grant</button>
       </div>
-      <div class="qa-note">Double-tap the Option (⌥) key to summon MIST from anywhere — even when she's closed (a tiny always-on background agent launches her). Needs macOS Accessibility permission for the agent (System Settings → Privacy & Security → Accessibility).</div>
+      <div class="qa-note">Double-tap the Option (⌥) key to summon Willow from anywhere — even when she's closed (a tiny always-on background agent launches her). Needs macOS Accessibility permission for the agent (System Settings → Privacy & Security → Accessibility).</div>
     </div>
     <h4>active mcp servers <span class="count" id="nMcp"></span></h4><div id="capMcp" class="chips"></div>
     <h4>tools <span class="count" id="nTools"></span></h4><div id="capTools" class="chips"></div>

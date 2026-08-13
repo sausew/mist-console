@@ -1223,3 +1223,69 @@ html[data-theme="willow"] #tabrail {
     linear-gradient(180deg, rgba(207,163,83,.12), transparent 40%),
     var(--surface);
 }
+
+/* ============================================================
+   ROOMS — persistent exobrain spaces in the rail + their view
+   ============================================================ */
+/* rail section headers (Rooms / Projects / Chats) */
+.rail-section {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--dim); font-weight: 700; margin: 14px 8px 4px; opacity: .85;
+}
+#roomRail .rail-section:first-child { margin-top: 2px; }
+.rail-section .add { cursor: pointer; font-size: 14px; opacity: .8; padding: 0 3px; }
+.rail-section .add:hover { color: var(--user); opacity: 1; }
+/* a room row in the rail (reuses .tab; add icon + title) */
+#roomRail .tab, #tabs .tab { position: relative; }
+.tab .rico { width: 18px; text-align: center; flex: 0 0 18px; }
+.tab.room .ttitle { flex: 1; }
+.tab .rdel { margin-left: auto; opacity: 0; color: var(--dim); font-size: 14px; padding: 0 2px; }
+.tab.room:hover .rdel { opacity: .7; }
+.tab .rdel:hover { color: var(--err); opacity: 1; }
+
+/* the room view (fills the conversation area when a room is open) */
+#roomView {
+  position: absolute; inset: 0; z-index: 2; overflow-y: auto;
+  padding: 26px 40px 40px; display: none;
+}
+#roomView.show { display: block; }
+#roomView .space-head {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+#roomView .space-title { font-size: 23px; font-weight: 700; color: var(--text); letter-spacing: .3px; }
+#roomView .space-sub { color: var(--dim); font-size: 14px; }
+#roomView .space-tools { margin-left: auto; display: flex; gap: 6px; }
+#roomView .space-tools button {
+  font: inherit; font-size: 12px; padding: 3px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--dim); cursor: pointer;
+}
+#roomView .space-tools button:hover { border-color: var(--user); color: var(--user); }
+#roomView .space-note { color: var(--dim); font-style: italic; font-size: 13.5px; margin: 14px 0 20px; max-width: 640px; }
+#roomView .card {
+  max-width: 680px; margin: 0 0 16px; padding: 13px 17px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 13px; box-shadow: 0 2px 8px rgba(90,66,26,.06);
+}
+#roomView .card h4 {
+  font-size: 12.5px; letter-spacing: .5px; color: var(--dim);
+  margin: 0 0 9px; text-transform: uppercase; font-weight: 700;
+}
+#roomView .checkline { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }
+#roomView .cbox {
+  width: 17px; height: 17px; border: 1.5px solid var(--user); border-radius: 5px;
+  flex: 0 0 17px; margin-top: 3px; cursor: pointer; position: relative; background: transparent;
+}
+#roomView .cbox.done { background: var(--ok); border-color: var(--ok); }
+#roomView .cbox.done::after { content: "✓"; color: #fff; font-size: 12px; position: absolute; left: 2.5px; top: -2.5px; }
+#roomView .ctext { flex: 1; }
+#roomView .ctext.done { color: var(--dim); text-decoration: line-through; }
+#roomView .line { margin: 6px 0; }
+#roomView .muted { color: var(--dim); font-size: 13.5px; }
+#roomView .room-empty { color: var(--dim); font-style: italic; }
+#roomView textarea.room-edit {
+  width: 100%; max-width: 700px; min-height: 320px; resize: vertical;
+  font-family: var(--mono); font-size: 14px; line-height: 1.6; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+}

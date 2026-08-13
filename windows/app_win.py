@@ -99,6 +99,122 @@ def _workspace_dir():
     return config_win.load_config().get("workspace") or config_win.DEFAULT_WORKSPACE
 
 
+# ---- rooms: persistent "exobrain" spaces in the rail -------------------------
+# A room is a living markdown document that persists and accumulates over time.
+# Fixed rhythm rooms (today/week/month) + play are defined here; "project" rooms
+# are user-added and tracked in rooms.json. Content lives in DATA_DIR/rooms/<id>.md
+import datetime as _dt
+
+ROOMS_DIR = os.path.join(DATA_DIR, "rooms")
+ROOMS_META = os.path.join(DATA_DIR, "rooms.json")
+_VALID_ROOM = re.compile(r"^[a-z0-9_-]{1,40}$")
+
+FIXED_ROOMS = [
+    {"id": "today", "kind": "rhythm", "icon": "☀", "title": "Today",
+     "note": "Here's the shape of your day — sorted, so it doesn't have to live in your head."},
+    {"id": "week", "kind": "rhythm", "icon": "\U0001F5D3", "title": "This week",
+     "note": "The week at a glance. Your Sunday check-in rolls up into here."},
+    {"id": "month", "kind": "rhythm", "icon": "\U0001F319", "title": "This month",
+     "note": "The bigger arc — your four areas. Small moves count."},
+    {"id": "play", "kind": "play", "icon": "\U0001F388", "title": "Play",
+     "note": "Not everything is a task. This room is only for aliveness."},
+]
+
+DEFAULT_PROJECTS = [
+    {"id": "freedom-after-the-fight", "icon": "\U0001F396", "title": "Freedom After the Fight"},
+    {"id": "30-days-course", "icon": "\U0001F4D7", "title": "30 Days course"},
+    {"id": "substack", "icon": "✍", "title": "Substack"},
+]
+
+_ROOM_SEEDS = {
+    "today": "## Today\n\n- [ ] \n",
+    "week": "## This week's three\n\n- [ ] \n- [ ] \n- [ ] \n",
+    "month": "## Finances + house\n\n## Relationship + friends\n\n## Business\n\n## Travel\n",
+    "play": "## This makes me feel alive\n\n- \n",
+    "freedom-after-the-fight": "## The throughline\n\nConnection for warriors — body → self → mind → others → world.\n\n## Open threads\n\n- [ ] \n",
+    "30-days-course": "## Notes\n\nThe title IS the niche.\n",
+    "substack": "## Idea shelf\n\n- \n",
+}
+
+def _rooms_meta():
+    try:
+        with open(ROOMS_META, encoding="utf-8") as f:
+            return json.load(f) or {}
+    except Exception:
+        return {}
+
+def _save_rooms_meta(meta):
+    try:
+        os.makedirs(ROOMS_DIR, exist_ok=True)
+        tmp = ROOMS_META + ".tmp.%d" % os.getpid()
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, ROOMS_META)
+    except Exception:
+        pass
+
+def _projects():
+    meta = _rooms_meta()
+    if "projects" not in meta:
+        meta["projects"] = [dict(p) for p in DEFAULT_PROJECTS]
+        _save_rooms_meta(meta)
+    return meta.get("projects", [])
+
+def _all_rooms():
+    return FIXED_ROOMS + [dict(p, kind="project") for p in _projects()]
+
+def _room_by_id(rid):
+    for r in _all_rooms():
+        if r["id"] == rid:
+            return r
+    return None
+
+def _room_path(rid):
+    return os.path.join(ROOMS_DIR, rid + ".md")
+
+def _write_room(rid, md):
+    try:
+        os.makedirs(ROOMS_DIR, exist_ok=True)
+        tmp = _room_path(rid) + ".tmp.%d" % os.getpid()
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(md)
+        os.replace(tmp, _room_path(rid))
+    except Exception:
+        pass
+
+def _read_room(rid):
+    try:
+        with open(_room_path(rid), encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        r = _room_by_id(rid) or {}
+        seed = _ROOM_SEEDS.get(rid, "## " + r.get("title", "Notes") + "\n\n")
+        _write_room(rid, seed)
+        return seed
+
+def _room_sub(rid):
+    now = _dt.datetime.now()
+    if rid == "today":
+        return now.strftime("%A, %B ") + str(now.day)
+    if rid == "week":
+        start = now - _dt.timedelta(days=(now.weekday() + 1) % 7)  # Sunday start
+        end = start + _dt.timedelta(days=6)
+        if start.month == end.month:
+            return start.strftime("%b ") + str(start.day) + " – " + str(end.day)
+        return start.strftime("%b ") + str(start.day) + " – " + end.strftime("%b ") + str(end.day)
+    if rid == "month":
+        return now.strftime("%B")
+    if rid == "play":
+        return "just for the joy of it"
+    return "project room"
+
+def _room_dir_for_chat(rid):
+    """Absolute path to a room's living document, given to Willow when Whitney
+    talks in that room so she can read + update it with her file tools."""
+    os.makedirs(ROOMS_DIR, exist_ok=True)
+    return _room_path(rid)
+
+
 def _save_meta():
     with _meta_lock:
         data = []
@@ -490,6 +606,52 @@ def font():
         _save_font(fid, stack)
         return jsonify({"ok": True, "id": fid, "stack": stack})
     return jsonify(_load_font())
+
+
+@app.route("/rooms", methods=["GET", "POST"])
+def rooms():
+    if request.method == "POST":
+        d = request.get_json(silent=True) or {}
+        title = (d.get("title") or "").strip()[:60]
+        icon = (d.get("icon") or "\U0001F5C2").strip()[:4] or "\U0001F5C2"
+        if not title:
+            return jsonify({"ok": False, "error": "title required"}), 400
+        base = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:40] or "project"
+        existing = {r["id"] for r in _all_rooms()}
+        rid, i = base, 2
+        while rid in existing:
+            rid = "%s-%d" % (base, i); i += 1
+        meta = _rooms_meta()
+        meta.setdefault("projects", [dict(p) for p in DEFAULT_PROJECTS])
+        meta["projects"].append({"id": rid, "icon": icon, "title": title})
+        _save_rooms_meta(meta)
+        _read_room(rid)  # seed its document
+        return jsonify({"ok": True, "id": rid})
+    return jsonify({"rooms": [dict(r, sub=_room_sub(r["id"])) for r in _all_rooms()]})
+
+
+@app.route("/rooms/<rid>", methods=["GET", "PUT", "DELETE"])
+def room(rid):
+    if not _VALID_ROOM.match(rid):
+        return jsonify({"ok": False, "error": "bad id"}), 400
+    if request.method == "DELETE":
+        meta = _rooms_meta()
+        meta["projects"] = [p for p in meta.get("projects", []) if p.get("id") != rid]
+        _save_rooms_meta(meta)
+        try:
+            os.remove(_room_path(rid))
+        except Exception:
+            pass
+        return jsonify({"ok": True})
+    r = _room_by_id(rid)
+    if not r:
+        return jsonify({"ok": False, "error": "no room"}), 404
+    if request.method == "PUT":
+        d = request.get_json(silent=True) or {}
+        _write_room(rid, d.get("md", ""))
+        return jsonify({"ok": True})
+    return jsonify(dict(r, sub=_room_sub(rid), note=r.get("note", ""),
+                        md=_read_room(rid), path=_room_path(rid)))
 
 
 @app.route("/sessions", methods=["GET"])
