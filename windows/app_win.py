@@ -117,7 +117,8 @@ FIXED_ROOMS = [
     {"id": "month", "kind": "rhythm", "icon": "\U0001F319", "title": "This month",
      "note": "The bigger arc — your four areas. Small moves count."},
     {"id": "play", "kind": "play", "icon": "\U0001F388", "title": "Play",
-     "note": "Not everything is a task. This room is only for aliveness."},
+     "note": "Not everything is a task. This room is only for aliveness — aim for at least 3 a week.",
+     "weekly": True, "goal": 3},
 ]
 
 DEFAULT_PROJECTS = [
@@ -130,7 +131,12 @@ _ROOM_SEEDS = {
     "today": "## Today\n\n- [ ] \n",
     "week": "## This week's three\n\n- [ ] \n- [ ] \n- [ ] \n",
     "month": "## Finances + house\n\n## Relationship + friends\n\n## Business\n\n## Travel\n",
-    "play": "## This makes me feel alive\n\n- \n",
+    "play": ("## This makes me feel alive\n\n"
+             "- [ ] \U0001F4F7 KC Photo Walk\n"
+             "- [ ] \U0001F30A Time near water\n"
+             "- [ ] \U0001F483 Dance, no reason needed\n"
+             "- [ ] \U0001F6B6 A long, slow walk\n"
+             "- [ ] \U0001F4D6 Read something just for joy\n"),
     "freedom-after-the-fight": "## The throughline\n\nConnection for warriors — body → self → mind → others → world.\n\n## Open threads\n\n- [ ] \n",
     "30-days-course": "## Notes\n\nThe title IS the niche.\n",
     "substack": "## Idea shelf\n\n- \n",
@@ -182,15 +188,47 @@ def _write_room(rid, md):
     except Exception:
         pass
 
+def _iso_week(dt=None):
+    y, w, _ = (dt or _dt.datetime.now()).isocalendar()
+    return "%d-W%02d" % (y, w)
+
+def _week_stamp_path(rid):
+    return os.path.join(ROOMS_DIR, rid + ".week.json")
+
+def _maybe_week_reset(rid, md):
+    """Weekly rooms (Play) start fresh each ISO week: every checkbox un-checks
+    when the week rolls over, so the tally is 'this week', not all-time."""
+    r = _room_by_id(rid) or {}
+    if not r.get("weekly"):
+        return md
+    cur = _iso_week()
+    try:
+        with open(_week_stamp_path(rid), encoding="utf-8") as f:
+            stored = (json.load(f) or {}).get("week")
+    except Exception:
+        stored = None
+    if stored == cur:
+        return md
+    new_md = re.sub(r"(?m)^(\s*-\s+)\[[xX]\]", r"\1[ ]", md)
+    if new_md != md:
+        _write_room(rid, new_md)
+    try:
+        os.makedirs(ROOMS_DIR, exist_ok=True)
+        with open(_week_stamp_path(rid), "w", encoding="utf-8") as f:
+            json.dump({"week": cur}, f)
+    except Exception:
+        pass
+    return new_md
+
 def _read_room(rid):
     try:
         with open(_room_path(rid), encoding="utf-8") as f:
-            return f.read()
+            md = f.read()
     except Exception:
         r = _room_by_id(rid) or {}
-        seed = _ROOM_SEEDS.get(rid, "## " + r.get("title", "Notes") + "\n\n")
-        _write_room(rid, seed)
-        return seed
+        md = _ROOM_SEEDS.get(rid, "## " + r.get("title", "Notes") + "\n\n")
+        _write_room(rid, md)
+    return _maybe_week_reset(rid, md)
 
 def _room_sub(rid):
     now = _dt.datetime.now()
@@ -650,8 +688,13 @@ def room(rid):
         d = request.get_json(silent=True) or {}
         _write_room(rid, d.get("md", ""))
         return jsonify({"ok": True})
+    md = _read_room(rid)
+    done = len(re.findall(r"(?m)^\s*-\s+\[[xX]\]", md))
+    total = len(re.findall(r"(?m)^\s*-\s+\[[ xX]\]", md))
     return jsonify(dict(r, sub=_room_sub(rid), note=r.get("note", ""),
-                        md=_read_room(rid), path=_room_path(rid)))
+                        md=md, path=_room_path(rid),
+                        weekly=bool(r.get("weekly")), goal=r.get("goal", 0),
+                        done=done, total=total))
 
 
 @app.route("/sessions", methods=["GET"])
