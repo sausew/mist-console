@@ -697,6 +697,64 @@ def room(rid):
                         done=done, total=total))
 
 
+# ---- calendar: dated daily to-dos + monthly progress ------------------------
+# Stored as data/calendar.json = { "YYYY-MM-DD": [ {"t": text, "d": done_bool}, ... ] }
+CAL_PATH = os.path.join(DATA_DIR, "calendar.json")
+_VALID_YM = re.compile(r"^\d{4}-\d{2}$")
+_VALID_YMD = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+def _load_cal():
+    try:
+        with open(CAL_PATH, encoding="utf-8") as f:
+            return json.load(f) or {}
+    except Exception:
+        return {}
+
+def _save_cal(data):
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        tmp = CAL_PATH + ".tmp.%d" % os.getpid()
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(tmp, CAL_PATH)
+    except Exception:
+        pass
+
+
+@app.route("/calendar/<ym>")
+def calendar_month(ym):
+    if not _VALID_YM.match(ym):
+        return jsonify({"ok": False, "error": "bad month"}), 400
+    data = _load_cal()
+    days = {k: v for k, v in data.items() if k.startswith(ym + "-")}
+    total = sum(len(v) for v in days.values())
+    done = sum(1 for v in days.values() for it in v if it.get("d"))
+    active = sum(1 for v in days.values() if v)
+    return jsonify({"month": ym, "days": days, "path": CAL_PATH,
+                    "summary": {"total": total, "done": done, "days_active": active}})
+
+
+@app.route("/calendar/day/<ymd>", methods=["GET", "PUT"])
+def calendar_day(ymd):
+    if not _VALID_YMD.match(ymd):
+        return jsonify({"ok": False, "error": "bad date"}), 400
+    data = _load_cal()
+    if request.method == "PUT":
+        body = request.get_json(silent=True) or {}
+        items = []
+        for it in (body.get("items") or []):
+            t = (it.get("t") or "").strip()
+            if t:
+                items.append({"t": t[:300], "d": bool(it.get("d"))})
+        if items:
+            data[ymd] = items
+        else:
+            data.pop(ymd, None)
+        _save_cal(data)
+        return jsonify({"ok": True, "count": len(items)})
+    return jsonify({"date": ymd, "items": data.get(ymd, [])})
+
+
 @app.route("/sessions", methods=["GET"])
 def sessions():
     return jsonify(_session_list())

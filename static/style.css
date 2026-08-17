@@ -1295,3 +1295,68 @@ html[data-theme="willow"] #tabrail {
   font-family: var(--mono); font-size: 14px; line-height: 1.6; color: var(--text);
   background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
 }
+
+/* ============================================================
+   CALENDAR — month grid of dated to-dos + monthly progress
+   ============================================================ */
+#calView { position: absolute; inset: 0; z-index: 2; overflow-y: auto; padding: 24px 34px 40px; display: none; }
+#calView.show { display: block; }
+#calView .cal-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+#calView .cal-title { font-size: 21px; font-weight: 700; color: var(--text); letter-spacing: .3px; }
+#calView .cal-nav {
+  font: inherit; font-size: 17px; line-height: 1; width: 30px; height: 30px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--dim); cursor: pointer;
+}
+#calView .cal-nav:hover { border-color: var(--user); color: var(--user); }
+#calView .cal-back {
+  font: inherit; font-size: 13px; padding: 4px 13px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--dim); cursor: pointer;
+}
+#calView .cal-back:hover { border-color: var(--user); color: var(--user); }
+#calView .cal-summary { margin-left: auto; color: var(--dim); font-size: 13.5px; }
+#calView .cal-bar {
+  position: relative; height: 22px; border-radius: 999px; background: rgba(90,66,26,.10);
+  overflow: hidden; margin-bottom: 18px; max-width: 940px;
+}
+#calView .cal-bar-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--gold), var(--ok)); border-radius: 999px; transition: width .3s; }
+#calView .cal-bar-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text); }
+#calView .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; max-width: 940px; }
+#calView .cal-dow { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--dim); padding-bottom: 2px; }
+#calView .cal-cell {
+  min-height: 74px; border: 1px solid var(--line); border-radius: 11px; padding: 7px 9px;
+  background: var(--surface-2); cursor: pointer; position: relative; transition: border-color .12s, box-shadow .12s;
+}
+#calView .cal-cell.blank { border: none; background: transparent; cursor: default; }
+#calView .cal-cell:not(.blank):hover { border-color: var(--user); box-shadow: 0 2px 8px rgba(90,66,26,.10); }
+#calView .cal-cell.today { border-color: var(--user); box-shadow: inset 0 0 0 1px var(--user); }
+#calView .cal-cell.partial { background: rgba(207,163,83,.16); }
+#calView .cal-cell.complete { background: rgba(126,137,79,.20); border-color: var(--ok); }
+#calView .cal-num { font-size: 14px; font-weight: 600; color: var(--text); }
+#calView .cal-cell.today .cal-num { color: var(--user); }
+#calView .cal-count {
+  position: absolute; right: 7px; bottom: 6px; font-size: 11px; font-weight: 600;
+  color: var(--dim); background: var(--surface); border-radius: 999px; padding: 1px 7px;
+}
+#calView .cal-cell.complete .cal-count { color: #4c6a2e; }
+/* day view */
+#calView .day-list { max-width: 640px; margin: 8px 0 16px; }
+#calView .day-list .checkline { display: flex; gap: 10px; align-items: flex-start; margin: 3px 0; padding: 6px 8px; border-radius: 9px; }
+#calView .day-list .checkline:hover { background: rgba(251,244,230,.6); }
+#calView .cbox {
+  width: 17px; height: 17px; border: 1.5px solid var(--user); border-radius: 5px;
+  flex: 0 0 17px; margin-top: 3px; cursor: pointer; position: relative; background: transparent;
+}
+#calView .cbox.done { background: var(--ok); border-color: var(--ok); }
+#calView .cbox.done::after { content: "✓"; color: #fff; font-size: 12px; position: absolute; left: 2.5px; top: -2.5px; }
+#calView .ctext { flex: 1; }
+#calView .ctext.done { color: var(--dim); text-decoration: line-through; }
+#calView .day-del { color: var(--dim); cursor: pointer; opacity: 0; font-size: 15px; padding: 0 2px; }
+#calView .day-list .checkline:hover .day-del { opacity: .6; }
+#calView .day-del:hover { color: var(--err); opacity: 1; }
+#calView .day-add { max-width: 640px; }
+#calView .day-new {
+  width: 100%; font: inherit; font-size: 15px; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px;
+}
+#calView .day-new:focus { border-color: var(--user); box-shadow: var(--focus); outline: none; }
+#calView .room-empty { color: var(--dim); font-style: italic; }
