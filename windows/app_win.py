@@ -111,14 +111,17 @@ _VALID_ROOM = re.compile(r"^[a-z0-9_-]{1,40}$")
 
 FIXED_ROOMS = [
     {"id": "today", "kind": "rhythm", "icon": "☀", "title": "Today",
-     "note": "Here's the shape of your day — sorted, so it doesn't have to live in your head."},
+     "note": "Here's the shape of your day — sorted, so it doesn't have to live in your head.",
+     "reset": "daily"},
     {"id": "week", "kind": "rhythm", "icon": "\U0001F5D3", "title": "This week",
-     "note": "The week at a glance. Your Sunday check-in rolls up into here."},
+     "note": "The week at a glance. Your Sunday check-in rolls up into here.",
+     "reset": "weekly"},
     {"id": "month", "kind": "rhythm", "icon": "\U0001F319", "title": "This month",
-     "note": "The bigger arc — your four areas. Small moves count."},
+     "note": "The bigger arc — your four areas. Small moves count.",
+     "reset": "monthly"},
     {"id": "play", "kind": "play", "icon": "\U0001F388", "title": "Play",
      "note": "Not everything is a task. This room is only for aliveness — aim for at least 3 a week.",
-     "weekly": True, "goal": 3},
+     "weekly": True, "goal": 3, "reset": "weekly"},
 ]
 
 DEFAULT_PROJECTS = [
@@ -188,23 +191,37 @@ def _write_room(rid, md):
     except Exception:
         pass
 
-def _iso_week(dt=None):
-    y, w, _ = (dt or _dt.datetime.now()).isocalendar()
-    return "%d-W%02d" % (y, w)
+def _reset_period(cadence, dt=None):
+    """The current period key for a reset cadence. When this string changes
+    between opens, the room's checkboxes un-check for the fresh period:
+    daily -> the date, weekly -> the date of the week's Sunday (so the week
+    rolls over Sunday, matching the "This week" range and the Sunday check-in),
+    monthly -> the year+month."""
+    now = dt or _dt.datetime.now()
+    if cadence == "daily":
+        return now.strftime("%Y-%m-%d")
+    if cadence == "monthly":
+        return now.strftime("%Y-%m")
+    sunday = now - _dt.timedelta(days=(now.weekday() + 1) % 7)   # weekly (default)
+    return "wk-" + sunday.strftime("%Y-%m-%d")
 
-def _week_stamp_path(rid):
-    return os.path.join(ROOMS_DIR, rid + ".week.json")
+def _reset_stamp_path(rid):
+    return os.path.join(ROOMS_DIR, rid + ".reset.json")
 
-def _maybe_week_reset(rid, md):
-    """Weekly rooms (Play) start fresh each ISO week: every checkbox un-checks
-    when the week rolls over, so the tally is 'this week', not all-time."""
+def _maybe_reset(rid, md):
+    """Rhythm rooms start fresh each period: every checkbox un-checks when the
+    period rolls over (Today -> daily, This week -> weekly, This month ->
+    monthly, Play -> weekly), so each list is 'this period', not all-time.
+    Only checkboxes reset — headings and freeform notes are left untouched.
+    On the first open after this feature ships, each room re-stamps itself once."""
     r = _room_by_id(rid) or {}
-    if not r.get("weekly"):
+    cadence = r.get("reset") or ("weekly" if r.get("weekly") else None)
+    if not cadence:
         return md
-    cur = _iso_week()
+    cur = _reset_period(cadence)
     try:
-        with open(_week_stamp_path(rid), encoding="utf-8") as f:
-            stored = (json.load(f) or {}).get("week")
+        with open(_reset_stamp_path(rid), encoding="utf-8") as f:
+            stored = (json.load(f) or {}).get("period")
     except Exception:
         stored = None
     if stored == cur:
@@ -214,8 +231,8 @@ def _maybe_week_reset(rid, md):
         _write_room(rid, new_md)
     try:
         os.makedirs(ROOMS_DIR, exist_ok=True)
-        with open(_week_stamp_path(rid), "w", encoding="utf-8") as f:
-            json.dump({"week": cur}, f)
+        with open(_reset_stamp_path(rid), "w", encoding="utf-8") as f:
+            json.dump({"period": cur, "cadence": cadence}, f)
     except Exception:
         pass
     return new_md
@@ -228,7 +245,7 @@ def _read_room(rid):
         r = _room_by_id(rid) or {}
         md = _ROOM_SEEDS.get(rid, "## " + r.get("title", "Notes") + "\n\n")
         _write_room(rid, md)
-    return _maybe_week_reset(rid, md)
+    return _maybe_reset(rid, md)
 
 def _room_sub(rid):
     now = _dt.datetime.now()
